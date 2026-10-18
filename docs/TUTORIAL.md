@@ -1,71 +1,46 @@
-# tools-registry — hands-on tutorial
+# tools-registry — 动手教程
 
-The whole registry, end to end. Every step shows the **exact command**, the **expected output**, and
-**what to notice** — so it reads standalone. Copy each command into your terminal and follow along.
+完整走一遍整个注册中心。每一步都给出**确切的命令**、**预期的输出**和**需要注意的地方**——因此本文可以独立阅读。把每条命令复制到你的终端里，跟着做即可。
 
-There are two companion versions of this same walkthrough, generated from one source
-(`src/treg/web/tutorial.js`):
+这份同样的实操演练还有两个配套版本，由同一来源（`src/treg/web/tutorial.js`）生成：
 
-- **In the dashboard** → sign in at `https://treg.to/` and open **Help → Tutorial**.
-- **Standalone** → `https://treg.to/tutorial`.
+- **在仪表盘中** → 在 `https://treg.to/` 登录，打开 **Help → Tutorial**。
+- **独立版** → `https://treg.to/tutorial`。
 
-### Two focused, deep-dive tutorials
+### 两个聚焦的深入教程
 
-This main walkthrough covers the whole registry. Two features have their own detailed tutorials — read
-those for the full, step-by-step treatment (each shows the exact commands, real output, and how it was
-tested):
+这份主演练覆盖整个注册中心。有两个功能各自拥有详细的教程——完整的分步讲解请阅读它们（每篇都展示了确切的命令、真实输出以及测试方式）：
 
-- **Import & shell** → `https://treg.to/tutorial-import-shell.md` — turn the CLIs already on your
-  machine into team tools in one command (`treg upload clis`), and open a shell (`treg shell`) where
-  `stripe`, `gh`, `gcloud` … just work with the team key injected. Includes the local-run **security
-  sandbox** (the CLI runs as a locked-down user, can reach only its own API, and can't leave the key on
-  disk).
-- **Team access control** → `https://treg.to/tutorial-access.md` — choose **which tools each member
-  may use**, and whether they may run CLIs **locally** — set at invite time, changed any time.
+- **导入与 shell** → `https://treg.to/tutorial-import-shell.md` — 用一条命令（`treg upload clis`）把你机器上已有的 CLI 变成团队工具，并打开一个 shell（`treg shell`），让 `stripe`、`gh`、`gcloud` 等开箱即用，团队密钥自动注入。包含本地运行的**安全沙箱**（CLI 以一个受限用户运行，只能访问自己的 API，且不会把密钥留在磁盘上）。
+- **团队访问控制** → `https://treg.to/tutorial-access.md` — 选择**每个成员可以使用哪些工具**，以及他们能否**在本地**运行 CLI——邀请时设置，随时可改。
 
 ---
 
-## Concepts (read once)
+## 概念（读一遍即可）
 
-- **Email is your identity.** You *are* a verified email. Three doors prove it — **GitHub**, an emailed
-  **one-time code** (OTP), or an **invite code**. The first time you prove an email you're *registered*;
-  every proof after is a *login*. There is no separate sign-up (and no more `treg register`).
-- **The proxy = a bank teller.** You call the real upstream API *through* the registry. It swaps your tool
-  reference for the real secret and injects it server-side. The key never lands on your machine; your
-  token authorises the call.
-- **A token = a (you, org) pair.** A **User** is an identity; an **Org** is a team that owns resources; a
-  **Membership** links them with a role. Your **identity token** (from `treg login`) works across every org
-  you belong to — `treg org use <slug>` picks the active one. (Agents/CI can use a per-org token instead.)
-- **Invites attach to an email.** An owner/admin invites an *email*. Prove that email (any door) and the
-  invite is yours to accept — no code needed. The code is a fast out-of-band shortcut, not a requirement.
-- **Tool & skill.** A **tool** = an upstream `base_url` + a list of credential **bindings** (a request may
-  carry several). A **skill / bundle** = a recipe (`SKILL.md`) + its secrets + its tool(s), registered from
-  a folder via a `treg.json` contract.
-- **Two ways to use a tool.** `treg call` proxies an HTTP **API** — the secret is injected server-side and
-  nothing lands on your machine. `treg run` runs a vendor **command-line tool** (stripe, gh, gcloud…) with
-  the credential injected, so you use the CLI without owning it or logging in. Two tiers: `--local` (default;
-  runs on your machine — on Linux the key is isolated under a dedicated `treg-run` user) and `--server`
-  (runs on the registry server, so the key never reaches you). The owner opts each tool in first; `treg runs`
-  is the audit log.
+- **邮箱就是你的身份。** 你*就是*一个经过验证的邮箱。有三扇门可以证明它——**GitHub**、邮件发送的**一次性验证码**（OTP）或**邀请码**。首次证明某个邮箱时你会被*注册*；之后的每次证明都是*登录*。没有单独的注册流程（`treg register` 也已移除）。
+- **代理 = 银行柜员。** 你是*通过*注册中心调用真实的上游 API。它把你的工具引用换成真实的机密，并在服务端注入。密钥永远不会落到你的机器上；你的令牌为这次调用授权。
+- **令牌 = 一对（你, 组织）。** **User** 是一个身份；**Org** 是拥有资源的团队；**Membership** 以一个角色把两者关联起来。你的**身份令牌**（来自 `treg login`）在你所属的每个组织都可用——`treg org use <slug>` 选定当前组织。（Agent/CI 可以改用按组织颁发的令牌。）
+- **邀请绑定到邮箱。** owner/admin 邀请的是一个*邮箱*。证明该邮箱（走任何一扇门）后，邀请就归你接受——无需验证码。验证码只是一条快速的带外捷径，并非必需。
+- **工具与 skill。** **工具** = 一个上游 `base_url` + 一组凭据**绑定**（一个请求可携带多个）。**skill / bundle** = 一份配方（`SKILL.md`）+ 其机密 + 其工具，通过 `treg.json` 契约从文件夹注册。
+- **使用工具的两种方式。** `treg call` 代理一个 HTTP **API**——机密在服务端注入，你的机器上什么都不会留下。`treg run` 在注入凭据的情况下运行一个厂商**命令行工具**（stripe、gh、gcloud 等），因此你无需持有密钥或登录就能使用 CLI。两个层级：`--local`（默认；在你的机器上运行——Linux 上密钥被隔离在专用的 `treg-run` 用户之下）和 `--server`（在注册中心服务器上运行，密钥永远不会到达你这里）。所有者需要先为每个工具选择加入；`treg runs` 是审计日志。
 
-### Roles at a glance
+### 角色一览
 
-| Action | viewer | member | admin | owner |
+| 操作 | viewer | member | admin | owner |
 |---|:--:|:--:|:--:|:--:|
-| call tools, read inventory | ✅ | ✅ | ✅ | ✅ |
-| register secrets / tools / skills | ❌ | ✅ | ✅ | ✅ |
-| edit / delete own resources | ❌ | ✅ | ✅ | ✅ |
-| edit / delete any resource in org | ❌ | ❌ | ✅ | ✅ |
-| invite / remove members | ❌ | ❌ | ✅ | ✅ |
-| change roles, delete org | ❌ | ❌ | ❌ | ✅ |
+| 调用工具、查看清单 | ✅ | ✅ | ✅ | ✅ |
+| 注册机密 / 工具 / skill | ❌ | ✅ | ✅ | ✅ |
+| 编辑 / 删除自己的资源 | ❌ | ✅ | ✅ | ✅ |
+| 编辑 / 删除组织内任何资源 | ❌ | ❌ | ✅ | ✅ |
+| 邀请 / 移除成员 | ❌ | ❌ | ✅ | ✅ |
+| 更改角色、删除组织 | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
-## Setup — simulate three people on one machine
+## 准备工作——在一台机器上模拟三个人
 
-We play three users on one laptop by giving each its own `HOME`, so each gets an isolated
-`~/.treg/config.json` pointed at the registry. In real life every person is on their own machine and drops
-the `HOME=` prefix.
+我们通过为每个用户指定各自的 `HOME`，在同一台笔记本上扮演三个用户，从而每个人都得到一个指向注册中心的、相互隔离的 `~/.treg/config.json`。在真实场景中，每个人都在自己的机器上，去掉 `HOME=` 前缀即可。
 
 ```bash
 for u in tom bob alice; do
@@ -74,21 +49,17 @@ for u in tom bob alice; do
 done
 ```
 
-**Notice:** prefix any command with `HOME=~/.treg-personas/<name>` to act as that person.
+**注意：**在任何命令前加上 `HOME=~/.treg-personas/<name>` 前缀，即可扮演该用户。
 
 ---
 
-# Part 1 — The catalog (no key, no setup)
+# 第 1 部分——工具目录（无需密钥，无需设置）
 
-Everything after this part needs a team, a secret and a registered tool before anything happens.
-The catalog needs none of them — it is the shortest path from "installed" to "got real data",
-and it is what treg now leads with.
+这一部分之后的一切，都需要先有团队、机密和已注册的工具才能进行。工具目录则都不需要——它是从"已安装"到"拿到真实数据"的最短路径，也是 treg 现在的主打功能。
 
-## Step 1 — Find a tool by what it DOES
+## 第 1 步——按它做什么来查找工具
 
-Tom has just installed the CLI. No team, no keys, nothing registered — and he can already work.
-He does not need to know which vendor sells backlink data; he searches by the **job**, and every
-hit shows what it costs.
+Tom 刚装好 CLI。没有团队、没有密钥、什么都没注册——但他已经可以干活了。他不需要知道哪家厂商卖外链数据；他按**任务**搜索，每个搜索结果都显示价格。
 
 ```bash
 treg catalog search "backlinks for a domain"
@@ -103,13 +74,11 @@ treg catalog search "backlinks for a domain"
   majestic.backlinks.list               web        Majestic     $0.010/call
 ```
 
-> Several providers usually serve one capability at different prices. treg shows them side by side
-> — **choosing is yours**; it does not silently pick or fail over for you.
+> 通常有多家服务商以不同价格提供同一能力。treg 会把它们并排展示——**选择权在你**；它不会悄悄替你挑选，也不会替你自动切换。
 
-## Step 2 — Read the price before you spend
+## 第 2 步——花钱之前先看价格
 
-Every catalogued endpoint carries its price, parameters and an example response. An agent is
-expected to read this and tell the human the cost *before* spending the team's balance.
+每个收录的端点都带有价格、参数和示例响应。agent 应当先读这些内容，在*花掉*团队余额*之前*把成本告知人类。
 
 ```bash
 treg catalog get tikhub.tiktok.user.profile
@@ -126,27 +95,21 @@ Public TikTok profile by username (uniqueId) or secUid
   verified  2026-07-28
 ```
 
-> An endpoint treg has no published price for is **refused**, never served for free — you are
-> told to connect your own key instead.
+> treg 没有公开定价的端点会被**拒绝**，绝不会免费提供服务——它会提示你改为接入自己的密钥。
 
-## Step 3 — Call it, with no key anywhere
+## 第 3 步——直接调用，全程无需任何密钥
 
-No account with TikHub, no signup, no key on the machine. treg holds the credential, injects it
-server-side, and bills the call to the team's prepaid balance. New verified accounts receive
-**$1.00 free once**, when creating an eligible team, which covers hundreds of calls at this price.
+没有 TikHub 账号、没有注册、机器上也没有密钥。treg 持有凭据，在服务端注入，并把这次调用记到团队预付余额上。新验证账号在创建符合条件的团队时可获得**一次性 $1.00 免费额度**，按这个价格足够数百次调用。
 
 ```bash
 treg call tikhub.tiktok.user.profile --query uniqueId=tiktok
 ```
 
-> If your team already has its own key for that provider it wins automatically — and those calls
-> are never metered.
+> 如果你的团队已经拥有该服务商自己的密钥，它会自动优先——并且这些调用永远不会被计量。
 
-## Step 4 — See exactly what it cost
+## 第 4 步——看清到底花了多少
 
-The balance is an append-only ledger in integer micro-USD (a millionth of a dollar), so a call
-costing a fraction of a cent is recorded exactly rather than rounded away. Out of balance is an
-HTTP **402** carrying the numbers an agent can act on.
+余额是一个只追加的账本，以整数微美元（百万分之一美元）计，因此花费不足一分的调用也会被精确记录，而不是被四舍五入抹掉。余额不足时返回 HTTP **402**，携带 agent 可以直接使用的数字。
 
 ```bash
 treg balance
@@ -159,15 +122,13 @@ treg balance
   settle   -$0.0010   tikhub.tiktok.user.profile
 ```
 
-> Only calls on treg's key cost balance. Your own keys, your own tools and vendor CLIs are free of it.
+> 只有使用 treg 密钥的调用才消耗余额。你自己的密钥、你自己的工具和厂商 CLI 都不消耗。
 
-# Part 2 — Tom founds Superdesign
+# 第 2 部分——Tom 创立 Superdesign
 
-## Step 5 — Tom signs in (the email door)
+## 第 5 步——Tom 登录（邮箱之门）
 
-There is no `register`. Tom proves his email with a one-time code — and since it's his first time, that same
-act **creates** him plus a personal org (so there's never an empty state). The code is **emailed** to him;
-he checks his inbox and types it in.
+没有 `register` 这个命令。Tom 用一次性验证码证明自己的邮箱——由于是第一次，这个动作会同时**创建**他的账号和一个个人组织（因此永远不会出现空状态）。验证码会**通过邮件**发送给他；他查看收件箱并输入验证码。
 
 ```bash
 HOME=~/.treg-personas/tom treg login --email tom@superdesign.dev
@@ -178,14 +139,11 @@ Enter code: 429641
 ✓ Logged in as tom@superdesign.dev. Active org: tom-superdesign-dev
 ```
 
-**Notice:** Check your inbox for the 6-digit code, then enter it. Tom now holds an **identity token** that
-works across every org he joins — no per-org tokens to juggle. (A dev box can set `TREG_EMAIL_DEV_MODE=true`
-to print the code inline instead of emailing it.)
+**注意：**去收件箱查收 6 位验证码，然后输入。Tom 现在持有一个**身份令牌**，在他加入的每个组织都有效——无需在多个令牌之间来回切换。（开发环境可以设置 `TREG_EMAIL_DEV_MODE=true`，把验证码直接打印出来而不是发邮件。）
 
-## Step 6 — Tom creates the team
+## 第 6 步——Tom 创建团队
 
-His personal org is just his own. Now he spins up the shared team and becomes its **owner**; his active org
-switches to it, so everything after runs there.
+他的个人组织只属于他自己。现在他创建共享团队并成为其 **owner**；当前组织会切换到它，之后的一切都在该组织下进行。
 
 ```bash
 HOME=~/.treg-personas/tom treg org create "Superdesign"
@@ -200,16 +158,15 @@ HOME=~/.treg-personas/tom treg org create "Superdesign"
 }
 ```
 
-**Notice:** personal orgs are auto-made on sign-in; **teams are created explicitly** with `org create`.
+**注意：**个人组织在登录时自动创建；**团队则需要显式创建**，用 `org create`。
 
 ---
 
-# Part 3 — Bob joins via the email door
+# 第 3 部分——Bob 通过邮箱之门加入
 
-## Step 7 — Tom invites Bob
+## 第 7 步——Tom 邀请 Bob
 
-Tom invites a teammate by **email**. The invite attaches to that email and Tom gets a one-time code he
-*could* hand over — but Bob won't even need it.
+Tom 通过**邮箱**邀请一位队友。邀请绑定到该邮箱，Tom 会拿到一个一次性验证码，他*可以*转交——但 Bob 其实根本用不上它。
 
 ```bash
 HOME=~/.treg-personas/tom treg org invite bob@superdesign.dev --role member
@@ -224,12 +181,11 @@ HOME=~/.treg-personas/tom treg org invite bob@superdesign.dev --role member
 }
 ```
 
-**Notice:** the invite is pending, addressed to Bob's email, valid 7 days (`--expires-days` to change).
+**注意：**邀请处于待接受状态，发给 Bob 的邮箱，有效期 7 天（可用 `--expires-days` 修改）。
 
-## Step 8 — Bob signs in as himself
+## 第 8 步——Bob 以自己的身份登录
 
-Switch to Bob. He proves his email the same way — and since it's his first time, this **creates** him too,
-with his own identity token and personal org. He never touches the invite code.
+切换到 Bob。他用同样的方式证明自己的邮箱——由于是第一次，这也会**创建**他的账号，连同他自己的身份令牌和个人组织。他从头到尾没有碰过邀请码。
 
 ```bash
 HOME=~/.treg-personas/bob treg login --email bob@superdesign.dev
@@ -240,13 +196,11 @@ Enter code: 512740
 ✓ Logged in as bob@superdesign.dev. Active org: bob-superdesign-dev
 ```
 
-**Notice:** same door as Tom — the code lands in Bob's inbox, he enters it. The email is the identity — the
-door (GitHub / code) is just how you prove it.
+**注意：**与 Tom 相同的门——验证码落入 Bob 的收件箱，他输入即可。邮箱是身份——门（GitHub / 验证码）只是证明它的方式。
 
-## Step 9 — Bob sees his invite (no code)
+## 第 9 步——Bob 看到自己的邀请（无需验证码）
 
-Because the invite is tied to Bob's now-proven email, he can just ask what's waiting for him. This is the
-full circle: proving the email reveals every invite addressed to it.
+由于邀请绑定到 Bob 已证明的邮箱，他只需查询有哪些在等他。这就是完整的闭环：证明邮箱即可看到发给它的所有邀请。
 
 ```bash
 HOME=~/.treg-personas/bob treg invites
@@ -265,12 +219,11 @@ HOME=~/.treg-personas/bob treg invites
 ]
 ```
 
-**Notice:** no code, no copy-paste from Tom — the proven email is the proof.
+**注意：**无需验证码，无需从 Tom 那里复制粘贴——已证明的邮箱本身就是凭证。
 
-## Step 10 — Bob accepts
+## 第 10 步——Bob 接受邀请
 
-Bob joins Superdesign by naming the org. No code — his proven identity is the proof. His active org switches
-to Superdesign.
+Bob 只需报出组织名即可加入 Superdesign。无需验证码——他已证明的身份就是凭证。当前组织切换为 Superdesign。
 
 ```bash
 HOME=~/.treg-personas/bob treg accept superdesign
@@ -284,12 +237,11 @@ HOME=~/.treg-personas/bob treg accept superdesign
 }
 ```
 
-**Notice:** Bob is now a **member** of Superdesign.
+**注意：**Bob 现在是 Superdesign 的 **member**。
 
-## Step 11 — Bob's two hats
+## 第 11 步——Bob 的两顶帽子
 
-One identity, two memberships — owner of his personal org, member of Superdesign. The same identity token
-works in both.
+一个身份，两个成员身份——个人组织的 owner、Superdesign 的 member。同一个身份令牌在两者中都可用。
 
 ```bash
 HOME=~/.treg-personas/bob treg org ls
@@ -299,16 +251,15 @@ HOME=~/.treg-personas/bob treg org ls
 * superdesign            Superdesign            member   (active)
 ```
 
-**Notice:** the `*` marks the active org. Switch anytime with `treg org use <slug>`.
+**注意：**`*` 标记当前组织。随时可用 `treg org use <slug>` 切换。
 
 ---
 
-# Part 4 — Alice joins via the code door
+# 第 4 部分——Alice 通过验证码之门加入
 
-## Step 12 — Tom invites Alice as a viewer
+## 第 12 步——Tom 邀请 Alice 为 viewer
 
-The other door: the **code**. First Tom invites Alice as a **viewer** — she'll be able to read and call, but
-not register anything.
+另一扇门：**验证码**。Tom 先把 Alice 邀请为 **viewer**——她可以读取和调用，但不能注册任何东西。
 
 ```bash
 HOME=~/.treg-personas/tom treg org invite alice@superdesign.dev --role viewer
@@ -323,12 +274,11 @@ HOME=~/.treg-personas/tom treg org invite alice@superdesign.dev --role viewer
 }
 ```
 
-**Notice:** this time we **keep the code** — Alice uses it directly next.
+**注意：**这次我们**保留验证码**——Alice 接下来直接使用它。
 
-## Step 13 — Alice joins by code (no login first)
+## 第 13 步——Alice 用验证码加入（无需先登录）
 
-The contrast with Bob: Alice **never runs** `login`. The code itself proves her email, so `join` creates
-her, adds her to Superdesign, and saves her token — all in one command.
+与 Bob 的对比：Alice **从不运行** `login`。验证码本身就证明了她的邮箱，因此 `join` 会创建她的账号、把她加入 Superdesign 并保存她的令牌——全部在一条命令中完成。
 
 ```bash
 HOME=~/.treg-personas/alice treg org join ZTeW5ss-cXiyvzeMs3em-… --email alice@superdesign.dev
@@ -342,12 +292,11 @@ HOME=~/.treg-personas/alice treg org join ZTeW5ss-cXiyvzeMs3em-… --email alice
 }
 ```
 
-**Notice:** one command created Alice, gave her a personal org, and made her a viewer — Tom never handled
-her token.
+**注意：**一条命令创建了 Alice、给了她一个个人组织、让她成为 viewer——Tom 从未经手她的令牌。
 
-## Step 14 — The viewer role has teeth
+## 第 14 步——viewer 角色的限制是动真格的
 
-Alice can read and call, but a viewer **cannot register** anything. Watch her get stopped.
+Alice 可以读取和调用，但 viewer **不能注册**任何东西。看看她如何被拦下。
 
 ```bash
 HOME=~/.treg-personas/alice treg secret add testkey --value "nope"
@@ -358,16 +307,15 @@ HOME=~/.treg-personas/alice treg secret add testkey --value "nope"
 }
 ```
 
-**Notice:** Alice was granted *use*, not *write* — the role gate doing its job.
+**注意：**Alice 被授予的是*使用*权，而非*写入*权——角色门槛正在发挥作用。
 
 ---
 
-# Part 5 — A tool through the proxy
+# 第 5 部分——通过代理使用工具
 
-## Step 15 — Bob registers a secret
+## 第 15 步——Bob 注册一个机密
 
-Unlike Alice, a **member** can register. Bob adds an API key — encrypted server-side, its value never
-returned again.
+与 Alice 不同，**member** 可以注册。Bob 添加一个 API 密钥——在服务端加密存储，其值此后再也不会返回。
 
 ```bash
 HOME=~/.treg-personas/bob treg secret add echo-key --value "sk-demo-secret-123"
@@ -382,12 +330,11 @@ HOME=~/.treg-personas/bob treg secret add echo-key --value "sk-demo-secret-123"
 }
 ```
 
-**Notice:** the secret is org-scoped (lives in Superdesign) and owned by Bob. A tool binds to it by `id`.
+**注意：**机密是组织范围的（存在于 Superdesign 中）且归 Bob 所有。工具通过 `id` 绑定它。
 
-## Step 16 — Bob registers a tool
+## 第 16 步——Bob 注册一个工具
 
-A tool = an upstream `base_url` + how to inject the credential. We point at postman-echo so we can *see* the
-injection. A single `--secret` defaults to a `Bearer` token in the `Authorization` header.
+工具 = 一个上游 `base_url` + 凭据的注入方式。我们指向 postman-echo，以便*亲眼看到*注入效果。单个 `--secret` 默认注入 `Authorization` 请求头中的 `Bearer` 令牌。
 
 ```bash
 HOME=~/.treg-personas/bob treg tool add echo --base-url https://postman-echo.com --secret 1
@@ -403,13 +350,11 @@ HOME=~/.treg-personas/bob treg tool add echo --base-url https://postman-echo.com
 }
 ```
 
-**Notice:** for multi-credential upstreams, add more bindings with `--bind` — treg applies every binding on
-each call.
+**注意：**对于多凭据的上游，用 `--bind` 添加更多绑定——treg 在每次调用时应用每一个绑定。
 
-## Step 17 — Alice calls it (with no key)
+## 第 17 步——Alice 调用它（没有任何密钥）
 
-The whole point of treg. Alice is a **viewer** with **no secret** on her machine. Yet when she calls, the
-upstream sees Bob's key, injected server-side.
+这正是 treg 的全部意义所在。Alice 是一个 **viewer**，她机器上**没有任何机密**。但当她调用时，上游看到的是 Bob 的密钥，在服务端注入。
 
 ```bash
 HOME=~/.treg-personas/alice treg call echo /get
@@ -426,11 +371,11 @@ HOME=~/.treg-personas/alice treg call echo /get
 }
 ```
 
-**Notice:** `authorization: Bearer sk-demo-secret-123` — Bob's secret, which Alice never had, saw, or stored.
+**注意：**`authorization: Bearer sk-demo-secret-123`——这是 Bob 的机密，Alice 从未持有、看到或存储过它。
 
-## Step 18 — Every call is on the record
+## 第 18 步——每次调用都有记录
 
-The proxy writes an audit row per call. The owner reviews the org's activity.
+代理为每次调用写一条审计记录。owner 可以查看组织的活动。
 
 ```bash
 HOME=~/.treg-personas/tom treg calls --limit 5
@@ -449,16 +394,15 @@ HOME=~/.treg-personas/tom treg calls --limit 5
 ]
 ```
 
-**Notice:** even though Alice used Bob's secret, the ledger records **who** actually made the call.
+**注意：**尽管 Alice 用的是 Bob 的机密，账本记录的是实际发起调用的**人**。
 
 ---
 
-# Part 6 — Call shapes & skills
+# 第 6 部分——调用形态与 skill
 
-## Step 19 — Call by full URL (agent-native)
+## 第 19 步——用完整 URL 调用（agent 原生）
 
-An agent often already knows the real upstream URL. Instead of `call <tool> <path>`, hand treg the **whole
-URL** — it matches the host to a registered tool and injects the key. No treg-specific knowledge needed.
+agent 通常已经知道真实的上游 URL。不必用 `call <tool> <path>`，直接把**完整 URL** 交给 treg——它会按主机匹配到已注册的工具并注入密钥。无需任何 treg 专属知识。
 
 ```bash
 HOME=~/.treg-personas/alice treg call https://postman-echo.com/get
@@ -468,12 +412,11 @@ HOME=~/.treg-personas/alice treg call https://postman-echo.com/get
 # note: no tool name in the command — just the destination URL.
 ```
 
-**Notice:** treg resolves the tool by **host**, so the agent-native full-URL form just works.
+**注意：**treg 按**主机**解析工具，因此 agent 原生的完整 URL 形式开箱即用。
 
-## Step 20 — The raw HTTP underneath
+## 第 20 步——底层的原始 HTTP
 
-`treg call` is sugar. Under the hood it's a plain HTTP request to `<proxy>/call/<upstream-url>` with your
-token header — any language, any agent, `curl`.
+`treg call` 只是语法糖。底层就是向 `<proxy>/call/<upstream-url>` 发送一个带令牌请求头的普通 HTTP 请求——任何语言、任何 agent、`curl` 都行。
 
 ```bash
 ATOK=$(python3 -c "import json;print(json.load(open('/Users/you/.treg-personas/alice/.treg/config.json'))['token'])")
@@ -485,14 +428,11 @@ curl -s -H "X-Treg-Token: $ATOK" \
 # just curl, no secret on the client.
 ```
 
-**Notice:** the whole product in one line: prefix any upstream URL with the proxy, send your token, treg
-swaps in the real credential.
+**注意：**整个产品浓缩成一行：在任何上游 URL 前加上代理前缀，带上你的令牌，treg 就会换入真实凭据。
 
-## Step 21 — Draft a skill's registration
+## 第 21 步——起草一个 skill 的注册
 
-A whole skill folder (a recipe + credential files) can register in one shot via a `treg.json` contract.
-`skill init` scans `SKILL.md` + the `.secret/` dir and drafts it — guessing the base URL and finding the
-secret. No values go in the file, only references.
+整个 skill 文件夹（配方 + 凭据文件）可以通过 `treg.json` 契约一次性注册。`skill init` 会扫描 `SKILL.md` 和 `.secret/` 目录并起草——猜测基础 URL 并找出机密。文件里不写入任何值，只有引用。
 
 ```bash
 HOME=~/.treg-personas/bob treg skill init --dir /tmp/skills/echo-svc
@@ -505,13 +445,11 @@ wrote /tmp/skills/echo-svc/treg.json
     - health / examples — optional
 ```
 
-**Notice:** it read the recipe and correctly guessed `base_url` + found the secret — fix anything it flagged,
-then register.
+**注意：**它读取了配方并正确猜出了 `base_url` + 找到了机密——修正它标记的任何内容，然后注册。
 
-## Step 22 — Upload the whole skill
+## 第 22 步——上传整个 skill
 
-One command turns the folder into a live tool: the recipe, the secret (value loaded from `.secret/`, never
-the json), and the tool — all created atomically as a **bundle**.
+一条命令把这个文件夹变成一个可用的工具：配方、机密（值从 `.secret/` 加载，绝不会来自 json）和工具——全部以 **bundle** 的形式原子化创建。
 
 ```bash
 HOME=~/.treg-personas/bob treg skill add --dir /tmp/skills/echo-svc
@@ -525,21 +463,17 @@ HOME=~/.treg-personas/bob treg skill add --dir /tmp/skills/echo-svc
 }
 ```
 
-**Notice:** everything shares a `bundle_id`, so a skill deletes as one unit too.
+**注意：**所有内容共享一个 `bundle_id`，因此 skill 也可以作为一个整体删除。
 
 ---
 
-# Part 6b — Import: the magic bulk on-ramp
+# 第 6b 部分——导入：神奇的批量入口
 
-Everything above, but for your **whole environment at once**. This is the fastest way to fill a team's
-registry.
+把上面的一切，一次应用于你的**整个环境**。这是填充团队注册中心最快的方式。
 
-## Step 22a — Turn your whole `.env` into tools
+## 第 22a 步——把整个 `.env` 变成工具
 
-`treg upload env` reads your `.env`, matches each variable against the providers treg recognizes, and
-registers the ones you pick as ready-to-call tools. Detection reads **names only**; the value is loaded
-only for the keys you confirm. Config vars (`*_HOST`, `*_MODEL`, `*_PROJECT_ID`) and your app's own
-secrets (`SECRET_KEY`, `SESSION_SECRET`, `DATABASE_URL`, `*_WEBHOOK_SECRET`) are excluded automatically.
+`treg upload env` 读取你的 `.env`，把每个变量与 treg 认识的服务商匹配，并把你选中的注册为可直接调用的工具。检测只读取**变量名**；只有你确认的密钥才会加载其值。配置类变量（`*_HOST`、`*_MODEL`、`*_PROJECT_ID`）和你应用自己的机密（`SECRET_KEY`、`SESSION_SECRET`、`DATABASE_URL`、`*_WEBHOOK_SECRET`）会被自动排除。
 
 ```bash
 HOME=~/.treg-personas/bob treg upload env --select openai,stripe,resend
@@ -553,15 +487,11 @@ Scanned .env: 6 key(s) to register, 1 OAuth, 4 other.
 Registered 3/3 tools.
 ```
 
-**Notice:** a `CLIENT_ID`+`CLIENT_SECRET` pair is detected as **OAuth** and offered a guided
-`treg oauth connect` instead of a broken bearer key. Other auth shapes are handled too — an API-key
-header (`x-api-key`), a query-param key (`?apiKey=`), or a Basic pair (base64 `id:secret`).
+**注意：**`CLIENT_ID`+`CLIENT_SECRET` 成对出现时会被识别为 **OAuth**，并引导你使用 `treg oauth connect`，而不是生成一个无法工作的 bearer 密钥。其他认证形态也会被处理——API 密钥请求头（`x-api-key`）、查询参数密钥（`?apiKey=`）或 Basic 对（base64 的 `id:secret`）。
 
-## Step 22b — Import a whole folder of skills
+## 第 22b 步——导入整个 skill 文件夹
 
-Point `treg upload skills` at a directory of skills. For each, it uses an existing `treg.json`, or
-**builds one** from the skill's script (base URL + the env var it reads) — registering API skills as
-tools and knowledge skills as recipe-only bundles. The whole team library lands in one pass.
+把 `treg upload skills` 指向一个 skills 目录。对其中每一个，它会使用已有的 `treg.json`，或根据 skill 的脚本**生成一个**（基础 URL + 它读取的环境变量）——把 API 类 skill 注册为工具，把知识类 skill 注册为纯配方 bundle。整个团队库一次导入到位。
 
 ```bash
 HOME=~/.treg-personas/bob treg upload skills --dir ~/.claude/skills --all
@@ -575,25 +505,19 @@ Scanned ~/.claude/skills: 5 API-tool skill(s), 23 recipe-only.
 Imported 27/28 skills.
 ```
 
-Re-run any time — it skips what's already registered (or `--replace` to update). A teammate then pulls
-any of them with `treg skill install <name>` (or `--all`), which writes the recipe into their
-`.claude/skills/`. Bare `treg upload` (no `env`/`skills`) does **both** for the current directory.
+随时可以重新运行——它会跳过已注册的（或用 `--replace` 更新）。队友随后可用 `treg skill install <name>`（或 `--all`）拉取其中任何一个，命令会把配方写入他们的 `.claude/skills/`。不带 `env`/`skills` 的裸 `treg upload` 会对当前目录**两者都做**。
 
-> **Non-interactive safety:** run from an agent/CI (no TTY) and upload refuses without `--all` or
-> `--select`, so credentials are never registered unattended by accident.
+> **非交互场景的安全保护：**在 agent/CI 中运行（无 TTY）时，没有 `--all` 或 `--select` 的话 upload 会拒绝执行，因此凭据绝不会在无人值守的情况下被意外注册。
 
 ---
 
-# Part 6c — Run a CLI tool
+# 第 6c 部分——运行 CLI 工具
 
-Every tool so far was an HTTP **API** you `call`. Many providers also ship a **command-line tool** (stripe,
-gh, gcloud…). `treg run` executes that CLI with the org's credential injected — so a teammate uses it
-*without* owning the key or logging in.
+到目前为止，每个工具都是你 `call` 的 HTTP **API**。许多服务商还提供**命令行工具**（stripe、gh、gcloud 等）。`treg run` 会在注入组织凭据的情况下执行该 CLI——队友*无需*持有密钥或登录即可使用。
 
-## Step 22c — Turn on `run` for a CLI tool
+## 第 22c 步——为一个 CLI 工具开启 `run`
 
-Because a run hands the credential to a machine, the owner opts each tool in first (the dashboard's **⌘ run**
-toggle is the same switch). Here Tom enables it for the `stripe` tool (its id from `tool ls`).
+因为运行会把凭据交给一台机器，所有者需要先为每个工具选择加入（仪表盘的 **⌘ run** 开关就是同一个开关）。这里 Tom 为 `stripe` 工具开启它（其 id 来自 `tool ls`）。
 
 ```bash
 HOME=~/.treg-personas/tom treg tool update 4 --local-run on
@@ -606,16 +530,11 @@ HOME=~/.treg-personas/tom treg tool update 4 --local-run on
 }
 ```
 
-**Notice:** off by default — a run is more powerful than a proxied call, so it's opt-in per tool, and only
-an owner/admin can flip it.
+**注意：**默认关闭——run 比代理调用能力更强，因此按工具选择加入，且只有 owner/admin 才能切换。
 
-## Step 22d — Run the vendor CLI (no login, nothing on disk)
+## 第 22d 步——运行厂商 CLI（无需登录，磁盘上不留任何东西）
 
-Now Bob runs Stripe's real CLI *through* treg. Everything after `--` is handed to the vendor tool verbatim.
-treg injects the credential just for this run; Bob never logged into Stripe or stored its key. The default
-tier is `--local` — it runs on Bob's own machine, and on Linux the key is isolated under a dedicated
-`treg-run` user (installed once with `sudo treg setup-local-run`; on macOS it's best-effort). Add `--server`
-to run it on the registry instead, for a catalog-known CLI, so the key never reaches Bob's machine at all.
+现在 Bob *通过* treg 运行 Stripe 的真实 CLI。`--` 之后的一切都原样交给厂商工具。treg 仅为这一次运行注入凭据；Bob 从未登录过 Stripe，也没有存储过它的密钥。默认层级是 `--local`——在 Bob 自己的机器上运行，Linux 上密钥被隔离在专用的 `treg-run` 用户之下（用 `sudo treg setup-local-run` 安装一次；macOS 上是尽力而为）。加上 `--server` 则改为在注册中心上运行（适用于工具目录已知的 CLI），这样密钥完全不会到达 Bob 的机器。
 
 ```bash
 HOME=~/.treg-personas/bob treg run stripe -- get /v1/balance
@@ -629,14 +548,11 @@ HOME=~/.treg-personas/bob treg run stripe -- get /v1/balance
 # Stripe's own CLI ran with the org key injected — Bob never logged in or held the key.
 ```
 
-**Notice:** `treg run <tool> -- <args>` for a CLI; `treg call <tool> <path>` for an HTTP API — same
-credential, two ways to use it.
+**注意：**CLI 用 `treg run <tool> -- <args>`；HTTP API 用 `treg call <tool> <path>`——同一凭据，两种用法。
 
-## Step 22e — Every run is on the record
+## 第 22e 步——每次运行都有记录
 
-Like proxied calls, CLI runs are audited. A `--server` run is recorded in the run ledger with its exit code
-and duration; a `--local` run leaves its audit trail beside the calls (`treg calls`). The owner reviews
-server runs with `treg runs`.
+与代理调用一样，CLI 运行也会被审计。`--server` 运行会连同退出码和时长记录在运行账本中；`--local` 运行则把审计痕迹留在调用记录旁边（`treg calls`）。owner 用 `treg runs` 查看服务器运行。
 
 ```bash
 HOME=~/.treg-personas/tom treg runs --limit 5
@@ -655,15 +571,15 @@ HOME=~/.treg-personas/tom treg runs --limit 5
 ]
 ```
 
-**Notice:** the mnemonic — `treg call` → `treg calls`; `treg run` → `treg runs`. Two verbs, two ledgers.
+**注意：**记忆口诀——`treg call` → `treg calls`；`treg run` → `treg runs`。两个动词，两本账。
 
 ---
 
-# Part 7 — Org administration
+# 第 7 部分——组织管理
 
-## Step 23 — See the team
+## 第 23 步——查看团队
 
-The owner lists everyone and their roles. Role changes reference a member by `user_id`.
+owner 列出所有人及其角色。角色变更通过 `user_id` 引用成员。
 
 ```bash
 HOME=~/.treg-personas/tom treg org members
@@ -676,12 +592,11 @@ HOME=~/.treg-personas/tom treg org members
 ]
 ```
 
-**Notice:** the full roster from one command.
+**注意：**一条命令看到完整名册。
 
-## Step 24 — Promote Bob to admin
+## 第 24 步——把 Bob 提升为 admin
 
-Only an owner changes roles. Let's make Bob an **admin** — he can invite/manage, but transfer and delete
-stay owner-only. The last-owner guard stops an org from becoming ownerless.
+只有 owner 能变更角色。我们把 Bob 设为 **admin**——他可以邀请/管理，但转移和删除仍仅限 owner。"最后一名 owner" 保护机制会防止组织变得群龙无首。
 
 ```bash
 HOME=~/.treg-personas/tom treg org set-role 2 admin
@@ -694,11 +609,11 @@ HOME=~/.treg-personas/tom treg org set-role 2 admin
 }
 ```
 
-**Notice:** one primitive (`set-role`) covers promotion, demotion, and ownership transfer.
+**注意：**一个原语（`set-role`）覆盖了提升、降级和所有权转移。
 
-## Step 25 — Admin rights in action
+## 第 25 步——admin 权限实战
 
-As a plain member Bob couldn't invite; as an **admin** he can. He invites a new teammate.
+作为普通 member 时 Bob 不能邀请；成为 **admin** 后就可以了。他邀请一位新队友。
 
 ```bash
 HOME=~/.treg-personas/bob treg org invite dana@superdesign.dev --role member
@@ -713,11 +628,11 @@ HOME=~/.treg-personas/bob treg org invite dana@superdesign.dev --role member
 }
 ```
 
-**Notice:** Bob manages the team without being the owner.
+**注意：**Bob 不必是 owner 也能管理团队。
 
-## Step 26 — Review pending invites
+## 第 26 步——查看待处理的邀请
 
-Admins see every invite still outstanding for the org. Accepted, revoked, and expired ones are filtered out.
+admin 可以看到组织中所有仍未处理的邀请。已接受、已撤销和已过期的会被过滤掉。
 
 ```bash
 HOME=~/.treg-personas/bob treg org invites
@@ -731,12 +646,11 @@ HOME=~/.treg-personas/bob treg org invites
 ]
 ```
 
-**Notice:** only Dana shows — Bob's and Alice's invites are already accepted, so they're gone from the list.
+**注意：**只有 Dana 显示——Bob 和 Alice 的邀请已被接受，因此从列表中消失了。
 
-## Step 27 — Revoke an invite
+## 第 27 步——撤销一个邀请
 
-Plans change — Bob kills Dana's invite before she uses it. This hard-deletes the code so it can never be
-accepted.
+计划有变——Bob 在 Dana 使用之前作废了她的邀请。这会硬删除该验证码，使其永远无法被接受。
 
 ```bash
 HOME=~/.treg-personas/bob treg org revoke 3
@@ -747,11 +661,11 @@ HOME=~/.treg-personas/bob treg org revoke 3
 }
 ```
 
-**Notice:** at join time: expired → `410`; revoked / used / unknown → `404 invalid or already-used invite`.
+**注意：**加入时：过期 → `410`；已撤销 / 已使用 / 未知 → `404 invalid or already-used invite`。
 
-## Step 28 — The role gate, from the viewer side
+## 第 28 步——从 viewer 一侧看角色门槛
 
-Alice is a viewer. She can call tools, but she can't invite — that needs admin+. She gets refused.
+Alice 是 viewer。她可以调用工具，但不能邀请——那需要 admin 及以上。她被拒绝了。
 
 ```bash
 HOME=~/.treg-personas/alice treg org invite eve@superdesign.dev --role member
@@ -762,17 +676,15 @@ HOME=~/.treg-personas/alice treg org invite eve@superdesign.dev --role member
 }
 ```
 
-**Notice:** roles, cleanly enforced: **owner** > **admin** > **member** > **viewer**.
+**注意：**角色被干净利落地执行：**owner** > **admin** > **member** > **viewer**。
 
 ---
 
-# Part 8 — Super-admin
+# 第 8 部分——超级管理员
 
-## Step 29 — Become the platform operator
+## 第 29 步——成为平台运营者
 
-Super-admin sits *above* orgs — it reads and manages every tenant. Two ways to authorise: the platform
-bearer `TREG_ADMIN_TOKEN`, or a user flagged `is_superadmin`. We use the bearer, read from `.env` so it
-never appears on screen.
+超级管理员位于组织*之上*——可以读取并管理每个租户。两种授权方式：平台 bearer 令牌 `TREG_ADMIN_TOKEN`，或被标记为 `is_superadmin` 的用户。我们使用 bearer，从 `.env` 读取，因此它不会出现在屏幕上。
 
 ```bash
 treg admin login --token "$(grep -E '^TREG_ADMIN_TOKEN=' .env | cut -d= -f2-)"
@@ -781,12 +693,11 @@ treg admin login --token "$(grep -E '^TREG_ADMIN_TOKEN=' .env | cut -d= -f2-)"
 admin token saved
 ```
 
-**Notice:** gated by `require_superadmin`, separate from org roles: a normal token → 403, no token → 401.
+**注意：**由 `require_superadmin` 把关，与组织角色相互独立：普通令牌 → 403，无令牌 → 401。
 
-## Step 30 — The whole platform at a glance
+## 第 30 步——整个平台尽收眼底
 
-One call gives totals across every tenant — the picture no single org owner can see. Plus
-`admin orgs / users / tools / health` for cross-tenant inventory.
+一次调用即可获得所有租户的汇总——这是任何单个组织 owner 都看不到的全景。另有 `admin orgs / users / tools / health` 用于跨租户清单。
 
 ```bash
 treg admin stats
@@ -798,12 +709,11 @@ treg admin stats
 }
 ```
 
-**Notice:** portal-ready JSON: distributions by injector/host, a credential-health rollup, call volume, and
-growth counts.
+**注意：**可直接用于门户的 JSON：按 injector/主机的分布、凭据健康度汇总、调用量和增长计数。
 
-## Step 31 — Every org, across all tenants
+## 第 31 步——所有租户的每个组织
 
-Cross-tenant visibility: Superdesign with its members + tools, plus everyone's personal orgs.
+跨租户可见性：Superdesign 及其成员 + 工具，外加每个人的个人组织。
 
 ```bash
 treg admin orgs
@@ -817,12 +727,11 @@ treg admin orgs
 ]
 ```
 
-**Notice:** the seam a support console or billing portal sits on later — same JSON, just rendered.
+**注意：**这正是日后客服控制台或计费门户所依托的接缝——同样的 JSON，只是换了个渲染。
 
-## Step 32 — Grant a real user super-admin
+## 第 32 步——授予真实用户超级管理员
 
-The env bearer bootstraps; then you promote named users so they reach `/admin/*` with their own identity
-token — no shared secret to pass around.
+环境变量里的 bearer 用于引导；然后你提升具名用户，让他们用自己的身份令牌访问 `/admin/*`——无需传递共享密钥。
 
 ```bash
 treg admin grant 1
@@ -834,19 +743,15 @@ treg admin grant 1
 }
 ```
 
-**Notice:** after the grant, Tom's normal identity token works on `admin` commands — and the dashboard's
-Admin panel lights up for him.
+**注意：**授权后，Tom 的普通身份令牌即可用于 `admin` 命令——仪表盘的 Admin 面板也会为他点亮。
 
 ---
 
-# Part 9 — The dashboard
+# 第 9 部分——仪表盘
 
-## Step 33 — The same registry, in the browser
+## 第 33 步——同一个注册中心，在浏览器里
 
-Open **treg.to** and sign in with the **email code** door (the same one you used in the terminal):
-type your email → click **Email me a sign-in code** → **check your inbox** for the 6-digit code → paste it
-in and **Sign in**. You land on your team org — Tools shows the `echo` tool, Activity shows the call, and
-(since Tom is now super-admin) an **Admin** panel appears.
+打开 **treg.to**，用**邮箱验证码**之门登录（就是你在终端里用的那个）：输入邮箱 → 点击 **Email me a sign-in code** → **去收件箱**查收 6 位验证码 → 粘贴并 **Sign in**。你会落在团队组织页——Tools 显示 `echo` 工具，Activity 显示那次调用，而且（因为 Tom 现在是超级管理员）还会出现一个 **Admin** 面板。
 
 ```bash
 open https://treg.to/
@@ -858,17 +763,15 @@ open https://treg.to/
 #   Admin    → cross-tenant stats + orgs (super-admin only)
 ```
 
-**Notice:** the dashboard is read + call today; creating/inviting/registering stays in the CLI (dashboard
-write UI is Phase 2).
+**注意：**仪表盘目前只支持读取 + 调用；创建/邀请/注册仍在 CLI 中完成（仪表盘的写入界面属于第二阶段）。
 
 ---
 
-# Part 10 — Cleanup
+# 第 10 部分——清理
 
-## Step 34 — Delete the tool
+## 第 34 步——删除工具
 
-Bob (its creator, and an admin) removes the tool. The bound secret stays — only the tool goes. A member
-can't delete a teammate's resource.
+Bob（工具的创建者，也是 admin）删除该工具。绑定的机密保留——只删除工具。member 不能删除队友的资源。
 
 ```bash
 HOME=~/.treg-personas/bob treg tool rm 1
@@ -879,12 +782,11 @@ HOME=~/.treg-personas/bob treg tool rm 1
 }
 ```
 
-**Notice:** delete order matters: remove the tool (or its binding) before the secret it uses.
+**注意：**删除顺序很重要：先删除工具（或其绑定），再删除它使用的机密。
 
-## Step 35 — Delete the org (full cascade)
+## 第 35 步——删除组织（完全级联）
 
-The finale. Deleting an org is owner-only and **confirm-by-name** — you must type the slug, and it must be
-your active org. The cascade removes all memberships, tools, secrets, bundles, invites, and audit rows.
+收官之作。删除组织仅限 owner，且需要**按名称确认**——你必须输入 slug，而且它必须是你的当前组织。级联删除会移除所有成员关系、工具、机密、bundle、邀请和审计记录。
 
 ```bash
 HOME=~/.treg-personas/tom treg org delete superdesign
@@ -895,21 +797,20 @@ HOME=~/.treg-personas/tom treg org delete superdesign
 }
 ```
 
-**Notice:** Bob and Alice keep their personal orgs — they were separate tenants all along. That's the full
-lifecycle: sign in → team → invite (both doors) → roles → tool → proxied call → audit → admin → tear down. 🏁
+**注意：**Bob 和 Alice 保留他们的个人组织——他们始终是独立的租户。这就是完整的生命周期：登录 → 团队 → 邀请（两扇门）→ 角色 → 工具 → 代理调用 → 审计 → 管理 → 拆除。 🏁
 
 ---
 
-## Appendix A — the four auth shapes
+## 附录 A——四种认证形态
 
-| Shape | Who | How | Header(s) |
+| 形态 | 使用者 | 方式 | 请求头 |
 |---|---|---|---|
-| **Identity token** | humans on the CLI | `treg login` (GitHub) or `treg login --email` (OTP) | `X-Treg-Token: <identity>` + `X-Treg-Org: <slug>` |
-| **Per-org token** | agents / CI | baked into an org at `org create` / `org join` | `X-Treg-Token: <org-token>` (org is implicit) |
-| **Session cookie** | the dashboard | GitHub or email-code sign-in sets a signed HttpOnly cookie | cookie + `X-Treg-Org: <slug>` |
-| **Admin bearer** | platform operator | `TREG_ADMIN_TOKEN`, or a user flagged `is_superadmin` | `X-Treg-Token: <admin>` on `/admin/*` |
+| **身份令牌** | CLI 上的人类用户 | `treg login`（GitHub）或 `treg login --email`（OTP） | `X-Treg-Token: <identity>` + `X-Treg-Org: <slug>` |
+| **按组织令牌** | agent / CI | 在 `org create` / `org join` 时固化到组织中 | `X-Treg-Token: <org-token>`（组织隐含其中） |
+| **会话 cookie** | 仪表盘 | GitHub 或邮箱验证码登录会设置一个签名的 HttpOnly cookie | cookie + `X-Treg-Org: <slug>` |
+| **Admin bearer** | 平台运营者 | `TREG_ADMIN_TOKEN`，或被标记为 `is_superadmin` 的用户 | `/admin/*` 上的 `X-Treg-Token: <admin>` |
 
-## Appendix B — command reference
+## 附录 B——命令参考
 
 ```
 treg login [--email you@x.com | --token <t>]   # sign in (GitHub default; email OTP; or a raw token)
@@ -942,5 +843,4 @@ treg admin login --token T | stats | orgs | users | tools | health | grant/revok
 Global: --org <slug> runs any single command in that org instead of the active one.
 ```
 
-The `register` command is retired — `login` is register-or-login. Multi-user demos use the **invite path**
-(`org invite` → `login`/`invites`/`accept`, or `org join <code>`).
+`register` 命令已退役——`login` 即注册即登录。多用户演示请使用**邀请路径**（`org invite` → `login`/`invites`/`accept`，或 `org join <code>`）。

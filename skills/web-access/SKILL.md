@@ -1,19 +1,15 @@
 ---
 name: web-access
-description: Use whenever a task needs something from the live web — search the web or the news, read a URL, map or crawl a site, pull structured fields from a page, or get data from a platform (X, LinkedIn, Reddit, TikTok, Instagram, YouTube, Xiaohongshu, Amazon, app stores, Google Maps, papers). Picks the right tool for the job, starts free, and lets treg fall back to the next vendor when one fails. No local scrapers, browsers or cookies.
+description: 只要任务需要从实时网络获取内容就使用本 skill——搜索网页或新闻、读取 URL、映射或爬取网站、从页面提取结构化字段，或从平台获取数据（X、LinkedIn、Reddit、TikTok、Instagram、YouTube、小红书、Amazon、应用商店、Google Maps、学术论文）。它会为任务挑选合适的工具，优先走免费接口，某家服务商失败时让 treg 自动回退到下一家。不需要本地爬虫、浏览器或 cookie。
 ---
 
-# Web access
+# 网页访问
 
-One treg key reads the web: free search and page fetch first, and the rest of the catalog behind them for the
-pages and platforms a free fetch can't reach. Nothing runs on this machine: no browser, no cookies,
-no burner accounts. treg calls the vendor and, on a routed job, tries the next one when a vendor
-comes back empty or blocked.
+一个 treg 密钥就能读取整个网络：免费的搜索与页面抓取打头阵，工具目录的其余端点在其后兜底，覆盖免费抓取够不到的页面和平台。本机不运行任何东西：不需要浏览器、cookie，也不需要一次性小号。treg 替你调用服务商；在路由任务中，当某家服务商返回空结果或被拦截时，会接着尝试下一家。
 
-Runs on treg. If it isn't set up (`treg --version` fails), read https://treg.to/llms.txt and follow it to
-install and sign in, then come back here.
+依赖 treg 运行。如果尚未设置（`treg --version` 失败），请阅读 https://treg.to/llms.txt 并按其中的指引完成安装和登录，然后再回到本文件。
 
-## Pick the job
+## 判断任务
 
 ```
 Know the URL?             → read it (free first)
@@ -26,102 +22,87 @@ Need typed fields?        → structured extract with a JSON schema or an instru
 Need it recent or dated?  → news search, not web search
 ```
 
-## Free first
+## 免费优先
 
-Web search and page reads are free through TinyFish:
+网页搜索和页面读取通过 TinyFish 免费：
 
 - `treg call treg.web.search --data '{"q":"…"}' --header 'X-Treg-Route-Prefer: tinyfish'`
 - `treg call treg.web.extract --data '{"url":"…"}' --header 'X-Treg-Route-Prefer: tinyfish'`
 
-Both are routed: when TinyFish comes back empty or blocked, treg tries the next vendor (Crawl4AI,
-AnyAPI, …). You pay the vendor that answered plus any vendor before it that bills a miss (`treg catalog
-get` says how many do); `X-Treg-Route-Max-Cost` caps the walk. To read up to ten URLs in one free call, call
-`tinyfish.web.fetch` directly with `{"urls":[…]}`; it does not fall back.
+两者都是路由端点：当 TinyFish 返回空结果或被拦截时，treg 会尝试下一家服务商（Crawl4AI、AnyAPI 等）。你只需为实际应答的服务商付费，外加它之前任何对未命中也计费的服务商（`treg catalog get` 会说明有多少家这样计费）；`X-Treg-Route-Max-Cost` 可为这条回退链设置上限。要在一次免费调用中读取最多十个 URL，可直接调用 `tinyfish.web.fetch` 并传入 `{"urls":[…]}`；该端点不会回退。
 
-Platform data (social, stores, reviews, maps) is not free: cents or fractions of a cent a call. Say so
-before a batch.
+平台数据（社交、电商、评论、地图）并不免费：每次调用收费几美分甚至不足一美分。批量调用前请先向用户说明。
 
-## Jobs
+## 任务类型
 
-Search the catalog for the words in the second column. The vendors are examples of who answers today;
-take whatever the catalog ranks best now.
+在工具目录中搜索第二列里的词语。示例服务商只是当前由谁应答的举例；请以工具目录当前排名最高的为准。
 
-| You want | Search the catalog for | Example vendors | Notes |
+| 需求 | 在工具目录中搜索 | 示例服务商 | 备注 |
 | --- | --- | --- | --- |
-| Web results | `treg.web.search` | TinyFish, Exa, Perplexity, Keenable | free with the TinyFish header |
-| A page as markdown | `treg.web.extract` | TinyFish, Crawl4AI, AnyAPI | free first; blocked pages fall back |
-| Typed fields from a page | `treg.web.extract.structured` | | send `url` plus a `schema` and/or `instruction` |
-| Every URL on a site | `treg.web.map` | AnyAPI, Firecrawl, Tavily | add `q` to rank URLs for a topic |
-| Many pages of a site | "crawl a website" | Firecrawl, Crawl4AI, Olostep | map first when you need only some pages |
-| Recent news | `treg.web.search.news` | Serper, DataForSEO, Exa | dated results |
-| Papers | "search research publications" | TinyFish, Exa, Serper | |
-| X, LinkedIn, Reddit, TikTok, Instagram, Threads, Facebook | "x search posts", "linkedin company posts", "reddit subreddit posts", "tiktok video comments", … | TikHub, ScrapeCreators, HarvestAPI, AnyAPI | profiles, posts, comments, reactions as fields |
-| YouTube, Bilibili | "youtube video comments", "youtube search videos" | Crawl4AI, TikHub, ScrapeCreators | |
-| Xiaohongshu, Douyin, Weibo | "xiaohongshu user notes", "douyin search videos" | TikHub, JustOneAPI | |
-| Stores | "amazon product detail", "amazon search products", "walmart search", "ebay search" | JustOneAPI, SerpAPI, Crawl4AI | price, rating, reviews as fields |
-| Reviews | "app store reviews", "google play app", "trustpilot reviews", "glassdoor reviews", "google maps reviews" | Crawl4AI, Bright Data, LiteScrape | |
-| Places | "google maps search", "local results" | DataForSEO, SerpAPI | |
-| Google results as Google shows them | "google serp organic" | DataForSEO, Serper | ranks, snippets, features |
+| 网页搜索结果 | `treg.web.search` | TinyFish, Exa, Perplexity, Keenable | 加 TinyFish 请求头即免费 |
+| 以 Markdown 读取页面 | `treg.web.extract` | TinyFish, Crawl4AI, AnyAPI | 免费优先；被拦截的页面自动回退 |
+| 从页面提取类型化字段 | `treg.web.extract.structured` | | 发送 `url`，并附 `schema` 和/或 `instruction` |
+| 网站上的所有 URL | `treg.web.map` | AnyAPI, Firecrawl, Tavily | 添加 `q` 可按主题对 URL 排序 |
+| 网站的多个页面 | "crawl a website" | Firecrawl, Crawl4AI, Olostep | 只需要部分页面时先做映射 |
+| 近期新闻 | `treg.web.search.news` | Serper, DataForSEO, Exa | 结果带日期 |
+| 学术论文 | "search research publications" | TinyFish, Exa, Serper | |
+| X、LinkedIn、Reddit、TikTok、Instagram、Threads、Facebook | "x search posts", "linkedin company posts", "reddit subreddit posts", "tiktok video comments", … | TikHub, ScrapeCreators, HarvestAPI, AnyAPI | 资料、帖子、评论、互动以字段形式返回 |
+| YouTube、Bilibili | "youtube video comments", "youtube search videos" | Crawl4AI, TikHub, ScrapeCreators | |
+| 小红书、抖音、微博 | "xiaohongshu user notes", "douyin search videos" | TikHub, JustOneAPI | |
+| 电商平台 | "amazon product detail", "amazon search products", "walmart search", "ebay search" | JustOneAPI, SerpAPI, Crawl4AI | 价格、评分、评论以字段形式返回 |
+| 评论 | "app store reviews", "google play app", "trustpilot reviews", "glassdoor reviews", "google maps reviews" | Crawl4AI, Bright Data, LiteScrape | |
+| 地点 | "google maps search", "local results" | DataForSEO, SerpAPI | |
+| 与 Google 展示一致的搜索结果 | "google serp organic" | DataForSEO, Serper | 排名、摘要、特色结果 |
 
-## Finding the endpoint
+## 查找端点
 
-The catalog changes every week, so never trust a remembered endpoint id.
+工具目录每周都在变化，所以绝不要依赖记忆中的端点 id。
 
-1. `treg catalog search "<the job in plain words>"`, not a vendor name.
-2. Prefer a routed `treg.*` endpoint when there is one: the team's own keys first, then vendors in
-   order, and most misses are free.
-3. `treg catalog get <id>`: the price, the vendors behind a routed job, and each one's measured
-   **hit rate** (it found something), not just works (it returned 200), and speed.
-4. One small call first. Read `_treg.served_by`, `_treg.tried` and the reported charge, then scale.
-5. Nothing fits: `treg catalog request "<what is missing>"`.
+1. `treg catalog search "<用平实语言描述的任务>"`，而不是搜索服务商名称。
+2. 有路由型 `treg.*` 端点时优先使用：先尝试团队自己的密钥，再按顺序尝试各服务商，且大多数未命中是免费的。
+3. `treg catalog get <id>`：查看价格、路由任务背后的各服务商，以及每家的实测**命中率**（真的找到了结果），而不仅是可用（返回 200），还有速度。
+4. 先做一次小规模调用。查看 `_treg.served_by`、`_treg.tried` 和报告的扣费，然后再放量。
+5. 都不合适：`treg catalog request "<缺少什么>"`。
 
-## Steering a routed job
+## 控制路由任务
 
-Options ride as headers, never in the body:
+选项通过请求头传递，绝不放在请求体中：
 
-| Header | Use it to |
+| 请求头 | 用途 |
 | --- | --- |
-| `X-Treg-Route-Prefer: <vendor>` | try that vendor first (free TinyFish, or the one that worked last time) |
-| `X-Treg-Route-Exclude: <vendor>` | skip a vendor that gave you bad answers |
-| `X-Treg-Route-Max-Cost: <usd>` | cap one call; uncapped, a miss can walk up to $1 of vendors |
-| `X-Treg-Route-Waterfall: 0` | stop at the first miss when only one vendor's answer will do |
+| `X-Treg-Route-Prefer: <vendor>` | 优先尝试该服务商（免费的 TinyFish，或上次成功的那家） |
+| `X-Treg-Route-Exclude: <vendor>` | 跳过曾给出糟糕结果的服务商 |
+| `X-Treg-Route-Max-Cost: <usd>` | 限制单次调用费用；不设上限时，一次未命中最多可能消耗 $1 的服务商调用 |
+| `X-Treg-Route-Waterfall: 0` | 当只需要某一家服务商的答案时，在首次未命中即停止 |
 
-Batches: always send a `Max-Cost`.
+批量调用：务必带上 `Max-Cost`。
 
-## Habits that save money and tokens
+## 省钱省 token 的习惯
 
-- Read pages as markdown, and cut navigation and footers before they reach the context.
-- A platform job returns fields; a scraped page of the same thing costs several times the tokens.
-- Search, then read only the results you need. Never read a whole site to answer one question.
-- Keep the source URL next to every fact you hand back.
+- 以 Markdown 读取页面，并在导航栏和页脚进入上下文之前将其剔除。
+- 平台任务返回的是字段；抓取同样内容的整页要多花数倍的 token。
+- 先搜索，再只读取需要的结果。绝不要为回答一个问题而读完整个网站。
+- 交付的每条事实旁都保留来源 URL。
 
-## Recipes
+## 配方
 
-- **Research a company:** web search → read its site, pricing and docs pages → news search for the last
-  90 days → its LinkedIn company profile.
-- **Read a docs site into context:** map the site with `q` set to the topic → read the top pages.
-- **Watch a page for changes:** read it, keep a hash of the text, read it again next run and report the
-  diff. Schedule it with the user's agent (Claude Code `/schedule` or `/loop`, cron for others).
-- **Social listening:** search posts on X, Reddit and LinkedIn → read the comments on the best ones →
-  summarise by theme with links.
-- **Compare a product across stores:** search it on each store → product detail for the matches → one
-  table of price, rating and review count.
-- **Collect reviews:** app store and Google Play for apps, Trustpilot and Glassdoor for companies, Google
-  Maps for places → quote the patterns, with counts.
-- **Videos into notes:** YouTube search → video detail and comments → summarise.
+- **调研一家公司：**网页搜索 → 读取其官网、定价和文档页面 → 搜索最近 90 天的新闻 → 读取其 LinkedIn 公司主页。
+- **把文档站读入上下文：**用 `q` 设定主题来映射站点 → 读取排名靠前的页面。
+- **监视页面变化：**读取页面，保存文本的哈希，下次运行时再次读取并报告差异。用用户的 agent 进行调度（Claude Code 用 `/schedule` 或 `/loop`，其他 agent 用 cron）。
+- **社交聆听：**搜索 X、Reddit 和 LinkedIn 上的帖子 → 读取其中最佳帖子的评论 → 按主题附带链接进行总结。
+- **跨平台比较商品：**在各电商平台搜索该商品 → 对匹配结果取商品详情 → 汇总成一张包含价格、评分和评论数的表格。
+- **收集评论：**应用用 App Store 和 Google Play，公司用 Trustpilot 和 Glassdoor，地点用 Google Maps → 引述评论中的规律，并附上数量。
+- **视频转笔记：**YouTube 搜索 → 视频详情和评论 → 总结。
 
-## Check the setup
+## 检查安装
 
 ```
 treg --version && treg balance
 treg call treg.web.search --data '{"q":"treg web access"}' --header 'X-Treg-Route-Prefer: tinyfish'
 ```
 
-A result with `_treg.served_by` and no charge means free search works. Something wrong:
-`treg feedback "<what happened>"` reaches the team.
+返回结果带有 `_treg.served_by` 且没有扣费，说明免费搜索工作正常。如有问题：`treg feedback "<发生了什么>"` 可以直接反馈给团队。
 
-## Lines not to cross
+## 不可跨越的红线
 
-Public data only. Never log in as the user, ask for their cookies or get round a paywall. Don't bulk
-collect personal data about private individuals. When a vendor refuses a page, take the fallback or
-tell the user; don't hammer it.
+只访问公开数据。绝不以用户身份登录、索要用户的 cookie 或绕过付费墙。不要批量收集私人个体的个人数据。当服务商拒绝返回某个页面时，使用回退或告知用户；不要反复轰炸它。

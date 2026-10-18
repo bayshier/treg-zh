@@ -1,58 +1,60 @@
-# Treg (OpenRouter for Tools)
+# Treg（面向工具的 OpenRouter）
 
-![treg — the tool catalog for your agent](docs/assets/treg-hero.png)
+> [!NOTE]
+> **汉化说明**：本仓库是 [superdesigndev/treg](https://github.com/superdesigndev/treg) 的非官方中文汉化版，遵循上游的 Apache-2.0 许可证（见 [LICENSE](LICENSE)），与上游官方无关。已汉化面向用户的文档（README、USAGE、教程、插件文档）和全部 `skills/*/SKILL.md`；代码、CLI 输出、控制台界面以及 `docs/context/`、`docs/ideas/` 等内部开发文档保持英文。翻译基于上游当前版本，可能滞后于最新改动，功能与行为请以上游仓库为准。
 
-**OpenRouter, but for agent tools instead of models.** Point an agent at one base URL with one token
-and it can do the job: **a curated catalog of thousands of endpoints across many providers** — SEO and backlinks,
-social and trends, people and company enrichment, ads, scraping, image and video generation —
-**priced per call, from a cent**,
-with no provider signup. Plus your own team's keys, skills and CLIs, callable by every teammate's
-agent without the credential ever leaving the server.
+![treg — 你的 agent 的工具目录](docs/assets/treg-hero.png)
 
-**Ask for the task, not the tool.** You do not need to know which vendor sells backlink data, or to
-hold an account with them. Search for what you want to do, read the price, call it.
+**OpenRouter，只是面向 agent 工具而非模型。** 把 agent 指向一个 base URL、只用一个 token，
+它就能完成任务：**一个横跨众多 provider、拥有数千端点的精选工具目录** — SEO 与外链、
+社交与趋势、个人与企业信息增强、广告、抓取、图像与视频生成 —
+**按次计费，低至一美分**，
+无需在 provider 处注册。再加上你自己团队的 key、skill（技能）和 CLI，团队每位成员的
+agent 都能调用，而凭据永远不会离开服务器。
 
-Built for the Superdesign team, live at [treg.to](https://treg.to) — anyone can self-host.
+**要的是任务，不是工具。** 你无需知道哪家厂商出售外链数据，也无需在他们那里持有账号。
+搜索你想做的事，读一下价格，然后调用。
 
-## Why it exists
+为 Superdesign 团队打造，线上服务见 [treg.to](https://treg.to) — 任何人都可以自托管。
 
-The tools an agent needs for real work sit behind subscriptions nobody buys for a single run —
-Semrush $139/mo, Moz $99/mo, Crunchbase $99/mo, Apollo $59/seat — behind signup walls, or behind no
-public API at all (invite-only, partner-only, app-review-only). treg carries those accounts and
-bills fractions of a cent per call.
+## 它为何存在
 
-## Two kinds of tool, one token
+agent 完成真实工作所需的工具，藏在没人会为单次运行而购买的订阅背后 —
+Semrush $139/月、Moz $99/月、Crunchbase $99/月、Apollo $59/席位 — 藏在注册墙后，
+或根本没有公开 API（仅限邀请、仅限合作伙伴、仅限应用审核）。treg 承载这些账号，
+按每次调用几分之一美分计费。
 
-- **The catalog** — external endpoints treg can serve with its own key or through a verified public
-  route that needs no provider key. Own-key calls use the team's prepaid balance; anonymous calls
-  are free. No account with the provider is needed. New verified accounts receive **$1.00 free**
-  once, when they create an eligible team.
-- **Your own tools** — anything a teammate registered: a paid API account, an OAuth connection, a
-  vendor CLI, a `SKILL.md`. **Your own key always wins over treg's, and those calls are never
-  metered.**
+## 两类工具，一个 token
 
-The vocabulary for the second half:
+- **工具目录** — treg 可以用自己的 key 提供服务的外部端点，或通过无需 provider key 的
+  已验证公开路由提供服务的外部端点。自有 key 的调用使用团队的预付余额；匿名调用
+  免费。无需在 provider 处开户。新验证账号在创建符合条件的团队时可一次性获得
+  **$1.00 免费额度**。
+- **你自己的工具** — 任何团队成员注册过的东西：付费 API 账号、OAuth 连接、
+  厂商 CLI、一份 `SKILL.md`。**你自己的 key 永远优先于 treg 的 key，这些调用永远不会
+  被计量。**
 
-- **tool** = something the registry calls for you with the org's credential. Two kinds:
-  - **endpoint** — an upstream `base_url` + credential **bindings** (each binding injects one
-  secret into the request; a request can carry several, e.g. an OAuth bearer *and* a
-  `developer-token` header).
-  - **CLI** — a vendor binary (`stripe`, `gh`, `vercel`, ...) run with the credential injected.
-- **skill / bundle** = a recipe (`SKILL.md`) + its secrets + its tool(s), registered together.
+后半部分的词汇表：
 
-**The one rule:** the proxy **relays, never models** the upstream, and **injects auth server-side**
-— so it survives upstream API changes and callers never hold keys.
+- **tool（工具）** = 注册中心用组织的凭据替你调用的东西。分两类：
+  - **endpoint（端点）** — 一个上游 `base_url` + 凭据**绑定**（每个绑定向请求注入一个
+    secret；一个请求可以携带多个，例如 OAuth bearer *和* `developer-token` 头）。
+  - **CLI** — 注入凭据后运行的厂商二进制程序（`stripe`、`gh`、`vercel` 等）。
+- **skill / bundle** = 一份配方（`SKILL.md`）+ 其 secret + 其工具，一起注册。
+
+**唯一的规则：** 代理只**转发、从不建模**上游，并且**在服务端注入认证**
+— 因此它能扛住上游 API 的变化，调用方也永远不持有 key。
 
 ---
 
-# Part 1 · Using the registry
+# 第 1 部分 · 使用注册中心
 
-Visit [**treg.to**](https://treg.to) (hosted on Render) — the dashboard,
-sign-in, and every URL below live there.
+访问 [**treg.to**](https://treg.to)（托管于 Render）— 仪表盘、
+登录以及下文的所有 URL 都在该域名下。
 
-## Quickstart
+## 快速开始
 
-Same flow as the dashboard's **Getting started** guide:
+与仪表盘的 **Getting started** 指南相同的流程：
 
 ```bash
 # 1. install the CLI — also points it at the registry
@@ -69,9 +71,9 @@ treg balance                                     # exactly what that cost
 # (or `treg onboard` for the guided walkthrough)
 ```
 
-Fish Audio provides S2.1 Pro speech, public-voice discovery, and private voice cloning.
-Speech is binary stdout, so redirect it to a file. A discovered voice's `_id` or a team voice id is
-the TTS `reference_id`; voices created on treg's Fish account are durable team resources:
+Fish Audio 提供 S2.1 Pro 语音合成、公开声音发现和私有声音克隆。
+语音以二进制 stdout 输出，因此请重定向到文件。已发现声音的 `_id` 或团队声音 id 即
+TTS 的 `reference_id`；在 treg 的 Fish 账号上创建的声音是持久的团队资源：
 
 ```bash
 treg call fishaudio.tts.s2-1-pro --method POST --header model=s2.1-pro \
@@ -80,42 +82,41 @@ treg call fishaudio.voices.discover --query self=false --query licensed=false --
 treg resources list --provider fishaudio --kind voice
 ```
 
-With your own Fish key, requests remain an unrestricted, unmetered upstream relay and Fish owns the
-account boundary.
+使用你自己的 Fish key 时，请求仍是不受限、不计量的上游转发，账号边界由 Fish 掌控。
 
-Catalog tool inputs are described by `treg catalog get <id>`. Tools marked `strict_query` reject undeclared or repeated query parameters, unsupported values and request bodies.
+工具目录中工具的输入由 `treg catalog get <id>` 描述。标记为 `strict_query` 的工具会拒绝未声明或重复的查询参数、不支持的值以及请求体。
 
-Your token identifies you on every call (`X-Treg-Token` header) and is the same for all tools.
-Discover what your team has shared: `treg tool ls` · check credential health: `treg health`.
+你的 token 在每次调用中标识你的身份（`X-Treg-Token` 头），且对所有工具通用。
+看看团队共享了什么：`treg tool ls` · 检查凭据健康状况：`treg health`。
 
-### Or install it as a Claude Code plugin
+### 或者作为 Claude Code 插件安装
 
 ```
 /plugin marketplace add superdesigndev/treg
 /plugin install treg@treg
 ```
 
-Installs with no token and no configuration. The skill loads as `treg:treg` and, on its first run,
-walks your agent through the rest — the CLI, sign-in, then `treg mcp install` — so you end up with
-the command line **and** treg's tools. Other agents: `npx skills add superdesigndev/treg -s treg`
-(or see [Workflow skills](#workflow-skills) for the rest).
-See [docs/CLAUDE-PLUGIN.md](docs/CLAUDE-PLUGIN.md). MiniMax Code / MiniMax Agent users: the same
-skill ships via the MiniMax Plugin Marketplace ([docs/MINIMAX-PLUGIN.md](docs/MINIMAX-PLUGIN.md)).
+安装时无需 token，也无需配置。该 skill 以 `treg:treg` 加载，首次运行时，
+它会引导你的 agent 完成其余步骤 — CLI、登录，然后 `treg mcp install` — 最终你会同时得到
+命令行**和** treg 的工具。其他 agent：`npx skills add superdesigndev/treg -s treg`
+（或参见 [Workflow skills](#workflow-skills) 了解其余方式）。
+参见 [docs/CLAUDE-PLUGIN.md](docs/CLAUDE-PLUGIN.md)。MiniMax Code / MiniMax Agent 用户：同一
+skill 也通过 MiniMax 插件市场分发（[docs/MINIMAX-PLUGIN.md](docs/MINIMAX-PLUGIN.md)）。
 
 ### Workflow skills
 
-Ready-made recipes your agent runs end to end, every call through treg:
+开箱即用的配方，你的 agent 可以端到端执行，每次调用都经过 treg：
 
-| Skill | What your agent can do |
+| Skill | 你的 agent 能做什么 |
 |---|---|
-| [`treg`](skills/treg/SKILL.md) | Find and call any tool in the catalog, plus your own tools |
-| [`web-access`](skills/web-access/SKILL.md) | Read the live web without local scrapers: free search and page reads first, then the right platform job for social, stores, reviews, maps and papers, with treg falling back to the next vendor when one fails |
-| [`lead-signals`](skills/lead-signals/SKILL.md) | Find in-market buyers from public signals (complaints, job changes, hiring, funding, tool adoption) and monitor a topic, competitor or account list for them ([treg.to/leads-signals](https://treg.to/leads-signals)) |
-| [`make-ugc`](skills/make-ugc/SKILL.md) | Make AI UGC videos: trending hooks, a presenter, talking-head clips, captions ([treg.to/ugc](https://treg.to/ugc)) |
-| [`jev-memory`](skills/jev-memory/SKILL.md) | Give Claude Code a memory: a Claude Code mod where Jev judges each prompt after the turn and keeps your lasting preferences, installed ready-made or built from one prompt ([the mod](examples/claude-code-mods/jev-memory)) |
+| [`treg`](skills/treg/SKILL.md) | 查找并调用工具目录中的任何工具，以及你自己的工具 |
+| [`web-access`](skills/web-access/SKILL.md) | 无需本地爬虫即可读取实时网络：先用免费搜索和页面读取，再为社交、商店、评论、地图和论文安排合适的平台任务；某一家失败时，treg 会改用下一家厂商 |
+| [`lead-signals`](skills/lead-signals/SKILL.md) | 从公开信号（投诉、职位变动、招聘、融资、工具采用）中发现有购买意向的买家，并据此监控某个话题、竞争对手或账号列表（[treg.to/leads-signals](https://treg.to/leads-signals)） |
+| [`make-ugc`](skills/make-ugc/SKILL.md) | 制作 AI UGC 视频：热门开场钩子、出镜者、口播片段、字幕（[treg.to/ugc](https://treg.to/ugc)） |
+| [`jev-memory`](skills/jev-memory/SKILL.md) | 给 Claude Code 一个记忆：一个 Claude Code mod，由 Jev 在每轮结束后评判每个 prompt 并保留你的持久偏好，可安装现成的，也可用一句 prompt 构建（[该 mod](examples/claude-code-mods/jev-memory)） |
 
-`install.sh` installs all of them for you except `jev-memory`, which is opt-in. To add them to an existing agent instead
-([skills.sh](https://skills.sh) CLI):
+`install.sh` 会为你安装除 `jev-memory` 之外的所有 skill，后者需要主动选择安装。若要将其添加到已有 agent
+（使用 [skills.sh](https://skills.sh) CLI）：
 
 ```bash
 npx skills add superdesigndev/treg                        # every public skill
@@ -123,23 +124,21 @@ npx skills add superdesigndev/treg --skill lead-signals   # just one
 treg skill bootstrap                                      # same set, with the treg CLI you already have
 ```
 
-The workflow skills run on treg, so set it up first (the Quickstart above, or point your agent at
-[treg.to/llms.txt](https://treg.to/llms.txt)).
+工作流 skill 运行在 treg 上，所以请先完成设置（见上面的快速开始，或把你的 agent 指向
+[treg.to/llms.txt](https://treg.to/llms.txt)）。
 
-### Claude.ai connector
+### Claude.ai 连接器
 
-The Claude Connectors Directory surface is `https://treg.to/mcp/v2/`. It exposes only curated
-catalog endpoints, without image, video or audio generation, and separates read calls from write
-calls so Claude receives accurate safety signals. The existing `/mcp/` surface remains available for catalog endpoints, team-owned tools,
-and imported skills. See the [MCP and OAuth architecture](docs/context/architecture/mcp-oauth.md)
-for the boundary and implementation, and the
-[submission runbook](https://github.com/superdesigndev/treg-internal/blob/main/docs/distribution/CLAUDE-CONNECTOR-SUBMISSION.md) for release gates.
+Claude Connectors Directory 的入口是 `https://treg.to/mcp/v2/`。它只暴露精选的
+工具目录端点，不含图像、视频或音频生成，并将读调用与写调用分开，让 Claude 收到准确的安全信号。现有 `/mcp/` 入口仍然可用于工具目录端点、团队自有工具
+和导入的 skill。边界与实现参见 [MCP 与 OAuth 架构](docs/context/architecture/mcp-oauth.md)，
+发布门槛参见[提交手册](https://github.com/superdesigndev/treg-internal/blob/main/docs/distribution/CLAUDE-CONNECTOR-SUBMISSION.md)。
 
-## Call a tool you don't have a key for
+## 调用你没有 key 的工具
 
-The catalog is grouped by what endpoints **do**: keyword and rank tracking, backlinks and authority,
-AI visibility, trending and discovery, publishing to socials, people and company enrichment, ads
-management and creative, measurement.
+工具目录按端点**能做什么**分组：关键词与排名跟踪、外链与权威度、
+AI 可见度、趋势与发现、发布到社交平台、个人与企业信息增强、广告
+管理与创意、效果衡量。
 
 ```bash
 treg catalog                                    # every platform, busiest first
@@ -149,60 +148,63 @@ treg catalog get hunter.people.email.find       # params, PRICE, example respons
 treg call hunter.people.email.find --query domain=reddit.com --query full_name="Alexis Ohanian"
 ```
 
-**How a catalogued call is served** — the credential ladder, in order:
+**工具目录中的调用是如何被服务的** — 凭据阶梯，按顺序：
 
-1. your team registered its own tool for that provider → that tool, that key;
-2. your team stored a secret for the provider → injected through a virtual tool;
-3. neither, and the endpoint has a verified public route → **no provider key**, free;
-4. otherwise → **treg's own key**, billed to the team's prepaid balance.
+1. 你的团队为该 provider 注册了自己的工具 → 用那个工具、那把 key；
+2. 你的团队为该 provider 存了 secret → 通过虚拟工具注入；
+3. 两者皆无，且该端点有已验证的公开路由 → **无需 provider key**，免费；
+4. 否则 → **treg 自己的 key**，计入团队的预付余额。
 
-The anonymous price assumes the caller does not send a provider credential header. The faithful
-relay preserves caller headers, so a caller-supplied provider key can use that key's credits.
-Your own credential always beats treg's, so connecting a key you already pay for makes those calls
-free of the balance rather than duplicating them. An endpoint treg has no published price for is
-**refused**, not served free — you are told to connect your own key instead. Where several providers
-serve one capability, `treg catalog search` shows them side by side with prices; **choosing is
-yours** — treg does not silently pick or fail over between providers for you. (When treg's own
-account for a provider is out it may serve the *same* endpoint through a treg-owned relay account,
-disclosed on the response; a team can opt out.) The exception you opt into: `treg.<capability>` routed endpoints, where treg picks the provider for you and names it. For common jobs (scraping a page, web search, Google results, finding an email) start with the routed endpoint, such as `treg.web.extract` or `treg.web.search`, rather than a provider you remember by name. On `treg.people.email.find` and `treg.people.phone.find`, `X-Treg-Route-Verify: true` also checks the found address or number in the same call, as its own charge, and says what the check found.
+匿名价格假定调用方不发送 provider 凭据头。忠实转发会保留调用方的头，因此调用方自带的
+provider key 可以使用该 key 自己的额度。你自己的凭据永远优先于 treg 的，所以接入一把
+你已经在付费的 key，可以让这些调用不消耗余额，而不是重复计一份。treg 没有公布价格的
+端点会被**拒绝**，而不是免费提供 — 系统会提示你改接自己的 key。当多个 provider
+服务同一能力时，`treg catalog search` 会把它们连同价格并排展示；**选择权在你** —
+treg 不会替你在 provider 之间默默挑选或故障转移。（当 treg 在某 provider 处的自有
+账号用尽时，可能改用 treg 持有的中继账号来服务*同一个*端点，并会在响应中说明；
+团队可以选择退出。）你可以主动选择的例外：`treg.<capability>` 路由端点，由 treg 替你
+挑选 provider 并指明是谁。对于常见任务（抓取网页、web 搜索、Google 结果、查找邮箱），
+请从路由端点开始，例如 `treg.web.extract` 或 `treg.web.search`，而不是某个你记得名字的
+provider。在 `treg.people.email.find` 和 `treg.people.phone.find` 上，`X-Treg-Route-Verify: true`
+还会在同一次调用中校验找到的地址或号码，作为单独计费的一项，并告知校验结果。
 
 ```bash
 treg balance          # credit left, calls in flight, recent spend
 treg topup            # add funds, or set up automatic top-ups
 ```
 
-Out of balance is an HTTP **402** carrying `balance_micro`, `estimated_cost_micro` and a `topup_url`,
-so an agent can act on it without reading prose.
+余额不足会返回 HTTP **402**，携带 `balance_micro`、`estimated_cost_micro` 和 `topup_url`，
+agent 无需阅读文字说明即可据此行动。
 
-**Enrich Arena** lives at `/enrich-arena`, outside the dashboard. Compare enrichment answers with each vendor’s cost and speed,
-vote for the best answer in one click, or watch a sequential waterfall. Capability-compatible
-async providers participate too; Arena handles submit and polling internally. Browsing is
-public; submitting requires login, and billable attempts use your team's credits. See the
-[Arena guide](docs/context/interface/enrich-arena.md).
+**Enrich Arena** 位于 `/enrich-arena`，在仪表盘之外。比较各家厂商信息增强答案的成本与速度，
+一键为最佳答案投票，或观看顺序瀑布。能力兼容的
+异步 provider 也会参与；Arena 在内部处理提交与轮询。浏览是
+公开的；提交需要登录，计费的尝试会消耗团队额度。参见
+[Arena 指南](docs/context/interface/enrich-arena.md)。
 
-**Web Arena** compares Web Search, Web Fetch, and Sitemap providers at `/web-arena`.
-Battle calls selected providers for the same input; Waterfall tries them in order. The
-live leaderboard combines direct provider-call hit rates and response times with checked
-Web Arena quality results over a rolling 30-day window. The pages open when the feature
-is enabled. See the
-[Web Arena guide](docs/context/interface/web-arena.md).
+**Web Arena** 在 `/web-arena` 比较 Web Search、Web Fetch 和 Sitemap provider。
+Battle 用相同输入调用选定的 provider；Waterfall 按顺序逐一尝试。
+实时排行榜将 provider 直调的命中率和响应时间，与经过核验的
+Web Arena 质量结果合并在 30 天滚动窗口内。功能启用后这些页面
+才会开放。参见
+[Web Arena 指南](docs/context/interface/web-arena.md)。
 
-## Share & use your own tools
+## 共享与使用你自己的工具
 
-The zero-thought path — point treg at a project and it figures out what's shareable:
+零思考路径 — 把 treg 指向一个项目，它会自己找出可共享的内容：
 
 ```bash
 treg scan     # read-only preview: the keys, skills & CLIs upload would register
 treg upload   # register them (encrypted server-side); idempotent, --replace to update
 ```
 
-`treg upload` scans the `.env` (matching keys against ~80 known providers), every skill
-subdirectory, and installed catalog CLIs. Three kinds of things go into the registry — here's how
-to share and use each:
+`treg upload` 会扫描 `.env`（将 key 与约 80 个已知 provider 进行匹配）、每个 skill
+子目录以及已安装的工具目录 CLI。有三类东西会进入注册中心 — 下面说明
+各自如何共享和使用：
 
-### 1. Endpoints (HTTP APIs)
+### 1. 端点（HTTP API）
 
-**Share** — one upstream URL callable with a stored key, or bulk from a `.env`:
+**共享** — 一个可用已存 key 调用的上游 URL，或从 `.env` 批量导入：
 
 ```bash
 treg secret add STRIPE_KEY --value sk_live_123
@@ -211,9 +213,9 @@ treg add stripe --base-url https://api.stripe.com --secret STRIPE_KEY
 treg upload env --select openai,stripe,resend     # or straight from the .env
 ```
 
-**Use** — the agent-native way: build the **real** upstream request and prefix it with the proxy.
-treg resolves the tool by host, injects the credential, and relays everything else faithfully
-(your `X-Treg-Token` is stripped before the upstream sees it):
+**使用** — agent 原生方式：构造**真实的**上游请求，并在前面加上代理前缀。
+treg 按主机名解析工具，注入凭据，然后忠实转发其余一切
+（你的 `X-Treg-Token` 会在上游看到之前被剥除）：
 
 ```
 Real request:   GET https://api.intercom.io/conversations?per_page=5
@@ -221,20 +223,20 @@ Through treg:   GET https://treg.to/call/https://api.intercom.io/conversations?p
                     header:  X-Treg-Token: <your token>
 ```
 
-Or the CLI shorthand — and `treg calls` for the audit log:
+或使用 CLI 简写 — 审计日志见 `treg calls`：
 
 ```bash
 treg call intercom conversations --query per_page=5
 treg call stripe v1/balance
 ```
 
-### 2. CLIs
+### 2. CLI
 
-**Share** — automatic: `treg upload` detects installed catalog CLIs (`stripe`, `gh`, `vercel`, …)
-and registers them; a recipe-only catalog CLI skill (e.g. `stripe-cli`) auto-becomes runnable too.
+**共享** — 自动的：`treg upload` 会检测已安装的工具目录 CLI（`stripe`、`gh`、`vercel` 等）
+并注册它们；仅有配方（recipe）的工具目录 CLI skill（例如 `stripe-cli`）也会自动变为可运行。
 
-**Use** — `treg run` executes the vendor CLI **with the org's credential injected**, so you never
-hold the key or log in:
+**使用** — `treg run` 在**注入组织凭据**的情况下执行厂商 CLI，因此你永远
+不需要持有 key 或登录：
 
 ```bash
 treg run stripe -- get /v1/balance
@@ -242,27 +244,27 @@ treg run gh -- pr list
 treg run --server agentmail-cli inboxes list   # runs on the registry server: the key never reaches you
 ```
 
-`--local` (default) runs on your machine; `--server` runs on the registry and streams output back.
-For a whole session, `treg shell start` opens a subshell where every registered CLI injects
-automatically — just use `stripe`, `gh`, … normally; `exit` reverts. `treg runs` is the audit log.
+`--local`（默认）在你的机器上运行；`--server` 在注册中心上运行并把输出流式传回。
+对于整个会话，`treg shell start` 会打开一个子 shell，其中每个已注册的 CLI 都自动注入
+— 正常使用 `stripe`、`gh` 等即可；`exit` 退出恢复。`treg runs` 是审计日志。
 
 ### 3. Skills
 
-**Share** — a skill is a whole capability (`SKILL.md` recipe + its secrets + its tool(s)),
-registered together so the whole team runs the same skill, maintained in one place:
+**共享** — 一个 skill 是一整项能力（`SKILL.md` 配方 + 其 secret + 其工具），
+一起注册，让整个团队运行同一个 skill，并在一处维护：
 
 ```bash
 treg upload skills --dir ~/.claude/skills --all   # register a folder of skills in one pass
 ```
 
-**Use** — pull any shared skill into your agent; its API calls go through treg with your token,
-so the key stays on the server, never in the skill:
+**使用** — 把任何共享的 skill 拉取到你的 agent 中；它的 API 调用带着你的
+token 经过 treg，因此 key 留在服务器上，永远不会进入 skill 本身：
 
 ```bash
 treg skill install seo-blog-writer      # writes into ./.claude/skills/  (--all for the library)
 ```
 
-### Manual registration — when the heuristics can't figure a tool out
+### 手动注册 — 当启发式规则认不出某个工具时
 
 ```bash
 # multi-credential tool (e.g. google-ads: OAuth bearer + a developer-token header)
@@ -279,18 +281,18 @@ treg oauth connect gsc --client-secret client_secret.json \
   --scopes https://www.googleapis.com/auth/webmasters.readonly
 ```
 
-Full options for every command: [`USAGE.md`](USAGE.md).
+每个命令的完整选项：[`USAGE.md`](USAGE.md)。
 
-The CLI sends anonymous command usage to PostHog when using treg.to (no arguments or credentials).
-Disable with `TREG_TELEMETRY=0` or `DO_NOT_TRACK=1`.
-See [analytics details](USAGE.md#anonymous-usage-analytics).
+使用 treg.to 时，CLI 会向 PostHog 发送匿名的命令使用数据（不含参数或凭据）。
+可用 `TREG_TELEMETRY=0` 或 `DO_NOT_TRACK=1` 禁用。
+详见[分析详情](USAGE.md#anonymous-usage-analytics)。
 
-## Teams
+## 团队
 
-An account can own up to 10 teams. Joining other teams as a member does not count toward this limit.
+一个账号最多可拥有 10 个团队。以成员身份加入其他团队不计入该上限。
 
-Everything is scoped to an **org**: a token = a `(user, org)` membership, and every secret, tool,
-and skill belongs to the active org. Roles: **owner / admin / member / viewer**.
+一切都以**组织**为范围：一个 token = 一份 `(user, org)` 成员关系，每个 secret、工具
+和 skill 都属于当前激活的组织。角色：**owner / admin / member / viewer**。
 
 ```bash
 treg org create "Acme"                        # make a team, become owner
@@ -300,35 +302,35 @@ treg org ls | use <slug> | members            # switch orgs, see the roster
 treg org access <member> --tools a,b          # per-member tool access (admin+)
 ```
 
-## Going deeper
+## 深入了解
 
-- **Feedback:** `treg feedback submit friction "The pagination example is unclear."`
-  Share problems or suggestions without private information. See [feedback instructions](https://treg.to/feedback.md).
-- **Review:** `treg review CALL_ID useful`
-  Rate an invited catalog call after using its result; `not_sure` is fine. Omit private data and continue the task.
+- **反馈：** `treg feedback submit friction "The pagination example is unclear."`
+  在不包含隐私信息的前提下分享问题或建议。参见[反馈说明](https://treg.to/feedback.md)。
+- **评价：** `treg review CALL_ID useful`
+  在使用其结果后为受邀的工具目录调用评分；`not_sure` 也可以。略去隐私数据并继续任务。
 
-- [`USAGE.md`](USAGE.md) — the full `treg` CLI reference.
-- [`/llms.txt`](https://treg.to/llms.txt) — the agent-onboarding file: call
-protocol, discovery, auth, CLI, skills. One fetch teaches an agent the whole registry.
-- **The dashboard** at [treg.to](https://treg.to) — full CRUD, a guided
-tutorial (Help → Tutorial), and copyable setup instructions for your agents.
-- **The API** — everything the CLI does is plain HTTP; interactive OpenAPI docs live at `/docs`.
-The proxy endpoint is `/call/{...}`; all endpoints take the `X-Treg-Token` header.
+- [`USAGE.md`](USAGE.md) — 完整的 `treg` CLI 参考。
+- [`/llms.txt`](https://treg.to/llms.txt) — agent 接入文件：调用
+  协议、发现、认证、CLI、skill。一次抓取就能让 agent 学会整个注册中心。
+- **仪表盘**位于 [treg.to](https://treg.to) — 完整的 CRUD、引导式
+  教程（Help → Tutorial），以及可复制的 agent 配置说明。
+- **API** — CLI 做的一切都是纯 HTTP；交互式 OpenAPI 文档在 `/docs`。
+  代理端点是 `/call/{...}`；所有端点都接受 `X-Treg-Token` 头。
 
 ---
 
-# Part 2 · Self-hosting & development
+# 第 2 部分 · 自托管与开发
 
-## Run it locally
+## 本地运行
 
-One command (needs `tmux` + [`uv`](https://docs.astral.sh/uv/); it syncs the venv itself):
+一条命令（需要 `tmux` + [`uv`](https://docs.astral.sh/uv/)；它会自行同步 venv）：
 
 ```bash
 scripts/dev-local.sh up        # server on http://localhost:18790, dev-safe settings
 ```
 
-That runs the server in tmux with hot-reload, its own sqlite DB (`treg-dev.db`), and email OTP dev
-mode (sign-in codes shown on the page — no mail sender needed). Day-to-day:
+它会在 tmux 中以热重载运行服务器，使用自己的 sqlite 数据库（`treg-dev.db`）和邮件 OTP 开发
+模式（登录验证码直接显示在页面上 — 无需邮件发送服务）。日常操作：
 
 ```bash
 scripts/dev-local.sh cli login   # sandboxed CLI: never touches your real ~/.treg/config.json
@@ -336,7 +338,7 @@ scripts/dev-local.sh logs        # server output          · status / restart / 
 scripts/dev-local.sh reset       # wipe the dev DB + CLI sandbox for a fresh start
 ```
 
-Or run the server directly, without tmux:
+或者不通过 tmux，直接运行服务器：
 
 ```bash
 bash scripts/build-dashboard.sh # Node 22.12+ and npm; build the Dashboard
@@ -346,112 +348,111 @@ uv run python -m treg          # serve on 0.0.0.0:18790 (add --reload for dev)
 uv run python -m treg keygen   # print a fresh Fernet key for TREG_SECRET_KEY
 ```
 
-> **Installing to run a server (not from source):** the base package is the **CLI only**. To run a
-> registry, install the server extra — `pip install "tools-registry[server]"` — which adds FastAPI, the
-> database drivers, and encryption. `pip install tools-registry` alone gives just the `treg` command for
-> talking to an existing registry.
+> **安装后要运行服务器（而非从源码）：** 基础包**只含 CLI**。要运行一个
+> 注册中心，请安装 server extra — `pip install "tools-registry[server]"` — 它会加上 FastAPI、
+> 数据库驱动和加密。只执行 `pip install tools-registry` 则只有用于连接现有注册中心的
+> `treg` 命令。
 
-The official hosted service is available at `treg.to`. Its production topology and live settings are
-maintained in the private [operator runbook](https://github.com/superdesigndev/treg-internal/blob/main/docs/production/deploy.md).
+官方托管服务见 `treg.to`。其生产拓扑和线上设置
+维护在私有的[运维手册](https://github.com/superdesigndev/treg-internal/blob/main/docs/production/deploy.md)中。
 
-## Configuration
+## 配置
 
-Environment variables (prefix `TREG_`, read from `.env`):
+环境变量（前缀 `TREG_`，从 `.env` 读取）：
 
 
-| Var                                       | Default                         | Purpose                                                                                                                                                                    |
+| 变量                                       | 默认值                          | 用途                                                                                                                                                                    |
 | ----------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TREG_DATABASE_URL`                       | `sqlite+aiosqlite:///./treg.db` | DB URL (SQLite for dev, Postgres in prod)                                                                                                                                  |
-| `TREG_READ_DATABASE_URL`                  | *(empty)*                       | Optional SQLite / PostgreSQL read datasource; empty reuses the primary. Requires callers to opt in; existing queries are unchanged. See [read datasource setup](docs/context/ops/deploy.md#optional-read-replica). |
-| `TREG_SECRET_KEY`                         | *(empty)*                       | Fernet key for secrets-at-rest; empty → an ephemeral key is minted (secrets won't survive a restart)                                                                       |
-| `TREG_PUBLIC_URL`                         | `https://treg.to`  | treg's public base, used to build the OAuth callback URI                                                                                                                   |
-| `TREG_SESSION_SECRET`                     | *(empty)*                       | signs the dashboard session cookie; falls back to `TREG_SECRET_KEY`. Set a real value in prod                                                                              |
-| `TREG_GITHUB_CLIENT_ID` / `_SECRET`       | *(empty)*                       | GitHub OAuth sign-in (callback `<public_url>/auth/github/callback`); empty hides the button                                                                                |
-| `TREG_GOOGLE_CLIENT_ID` / `_SECRET`       | *(empty)*                       | Google OAuth sign-in (redirect `<public_url>/auth/google/callback`); empty hides the button                                                                                |
-| `TREG_INSTAGRAM_CLIENT_ID` / `_SECRET`    | *(empty)*                       | Instagram App ID and secret for direct Instagram Login (redirect `<public_url>/oauth/callback`)                                                                           |
-| `TREG_META_CLIENT_ID` / `_SECRET`         | *(empty)*                       | Meta app credentials for Facebook Pages, Meta Ads, and optional Instagram `page-tools`                                                                                     |
-| `TREG_OAUTH_REVIEW_PENDING`               | `instagram-login,page-messages` | Comma-separated registry review keys whose capabilities must remain gated; hosted review state is maintained privately.                                                   |
-| `TREG_RESEND_API_KEY` / `TREG_EMAIL_FROM` | *(empty)*                       | transactional email via Resend (OTP codes + invites); From must be a Resend-verified sender                                                                                |
-| `TREG_BLOCKED_EMAIL_DOMAINS`              | *(empty)*                       | comma-separated email domains refused at every sign-up/sign-in door and at team creation (subdomains included, case-insensitive). Empty blocks nothing — no list ships in the code |
-| `TREG_CLIENT_IP_HEADER`                   | *(empty)*                       | a header only your edge can set, used as the client address for every per-IP limit (`cf-connecting-ip` behind Cloudflare) |
-| `TREG_TRUSTED_PROXY_HOPS`                 | `1`                             | without that header: the `X-Forwarded-For` entry this many hops from the RIGHT (the one your nearest proxy appended); `0` when clients connect directly. The first entry is client-written and never trusted |
-| `TREG_REQUIRED_EXTENSIONS`                | *(empty)*                       | comma-separated policy extensions (`treg.extensions` entry points) that must be installed, else startup fails. treg.to runs a private abuse-policy extension this way; it can only restrict ([policy extensions](docs/context/architecture/policy-extensions.md)) |
-| `TREG_TURNSTILE_SITE_KEY` / `_SECRET`     | *(empty)*                       | Cloudflare Turnstile on every email sign-in form; either empty = off. The site key is served in `/captcha.js`, the secret only reaches siteverify |
-| `TREG_TURNSTILE_MODE`                     | `observe`                       | `observe` logs each outcome and changes nothing; `enforce` refuses a code to a missing or invalid token, and gives no signup credit when Cloudflare cannot answer |
-| `TREG_TURNSTILE_HOSTNAMES`                | *(empty)*                       | comma-separated hosts a token must be solved on; empty = the `TREG_PUBLIC_URL` host (and its known aliases) |
-| `TREG_ADMIN_TOKEN`                        | *(empty)*                       | cross-tenant **super-admin** bearer; authorizes every `/admin/*` endpoint. Empty disables the env path (only `is_superadmin` users reach `/admin`). Keep it long + secret. |
-| `TREG_EMAIL_DEV_MODE`                     | `false`                         | when true, `/auth/email/start` returns the OTP in its response (no mail sender needed) — **dev/local only**, never in prod.                                                |
-| `TREG_KV_URL`                             | *(empty)*                       | shared key-value store (Redis protocol) for counters every worker must agree on, today the per-team review-invitation budget. Empty = an in-process fallback, fine for one worker |
+| `TREG_DATABASE_URL`                       | `sqlite+aiosqlite:///./treg.db` | 数据库 URL（开发用 SQLite，生产用 Postgres）                                                                                                                                  |
+| `TREG_READ_DATABASE_URL`                  | *(空)*                       | 可选的 SQLite / PostgreSQL 只读数据源；为空则复用主库。需要调用方主动启用；现有查询不受影响。参见[只读数据源配置](docs/context/ops/deploy.md#optional-read-replica)。 |
+| `TREG_SECRET_KEY`                         | *(空)*                       | 用于静态加密 secret 的 Fernet key；为空 → 会生成一把临时 key（重启后 secret 将无法恢复）                                                                       |
+| `TREG_PUBLIC_URL`                         | `https://treg.to`  | treg 的公开基址，用于构造 OAuth 回调 URI                                                                                                                   |
+| `TREG_SESSION_SECRET`                     | *(空)*                       | 为仪表盘会话 cookie 签名；缺省回退到 `TREG_SECRET_KEY`。生产环境请设置真实值                                                                              |
+| `TREG_GITHUB_CLIENT_ID` / `_SECRET`       | *(空)*                       | GitHub OAuth 登录（回调 `<public_url>/auth/github/callback`）；为空则隐藏按钮                                                                                |
+| `TREG_GOOGLE_CLIENT_ID` / `_SECRET`       | *(空)*                       | Google OAuth 登录（重定向 `<public_url>/auth/google/callback`）；为空则隐藏按钮                                                                                |
+| `TREG_INSTAGRAM_CLIENT_ID` / `_SECRET`    | *(空)*                       | 用于 Instagram Login 直连的 Instagram App ID 和 secret（重定向 `<public_url>/oauth/callback`）                                                                           |
+| `TREG_META_CLIENT_ID` / `_SECRET`         | *(空)*                       | 用于 Facebook Pages、Meta Ads 及可选 Instagram `page-tools` 的 Meta 应用凭据                                                                                     |
+| `TREG_OAUTH_REVIEW_PENDING`               | `instagram-login,page-messages` | 以逗号分隔的注册中心审核 key，其能力必须保持受限；托管服务的审核状态另行私有维护。                                                   |
+| `TREG_RESEND_API_KEY` / `TREG_EMAIL_FROM` | *(空)*                       | 通过 Resend 发送事务邮件（OTP 验证码 + 邀请）；发件人必须是经 Resend 验证的发送者                                                                                |
+| `TREG_BLOCKED_EMAIL_DOMAINS`              | *(空)*                       | 以逗号分隔的邮箱域名，在所有注册/登录入口和团队创建处均被拒收（含子域名，不区分大小写）。为空则不拦截任何域名 — 代码中不附带任何名单 |
+| `TREG_CLIENT_IP_HEADER`                   | *(空)*                       | 一个只有你的边缘层才能设置的头，用作每个按 IP 限制的客户端地址（Cloudflare 之后为 `cf-connecting-ip`） |
+| `TREG_TRUSTED_PROXY_HOPS`                 | `1`                             | 没有该头时：取 `X-Forwarded-For` 中从右数第这几跳的条目（即离你最近的代理所追加的那个）；客户端直连时为 `0`。第一个条目由客户端写入，永远不被信任 |
+| `TREG_REQUIRED_EXTENSIONS`                | *(空)*                       | 必须安装的以逗号分隔的策略扩展（`treg.extensions` 入口点），否则启动失败。treg.to 就以这种方式运行一个私有的反滥用策略扩展；它只能做限制（[策略扩展](docs/context/architecture/policy-extensions.md)） |
+| `TREG_TURNSTILE_SITE_KEY` / `_SECRET`     | *(空)*                       | 每个邮箱登录表单上的 Cloudflare Turnstile；任一为空即关闭。site key 经 `/captcha.js` 提供，secret 只会送达 siteverify |
+| `TREG_TURNSTILE_MODE`                     | `observe`                       | `observe` 记录每次结果但不做任何改变；`enforce` 在 token 缺失或无效时拒绝发放验证码，并在 Cloudflare 无法应答时不发放注册赠金 |
+| `TREG_TURNSTILE_HOSTNAMES`                | *(空)*                       | 以逗号分隔的主机名，token 必须在这些主机上完成人机验证；为空 = `TREG_PUBLIC_URL` 的主机（及其已知别名） |
+| `TREG_ADMIN_TOKEN`                        | *(空)*                       | 跨租户的**超级管理员** bearer；授权所有 `/admin/*` 端点。为空则禁用环境变量途径（仅 `is_superadmin` 用户可访问 `/admin`）。请设置得足够长并妥善保密。 |
+| `TREG_EMAIL_DEV_MODE`                     | `false`                         | 为 true 时，`/auth/email/start` 会在响应中直接返回 OTP（无需邮件发送服务）— **仅限开发/本地**，切勿用于生产。                                                |
+| `TREG_KV_URL`                             | *(空)*                       | 共享键值存储（Redis 协议），用于所有 worker 必须达成一致的计数器，目前是每团队的审核邀请预算。为空 = 进程内回退，单 worker 场景足够 |
 
 
-No `.env` is needed for local dev — every setting has a working default (ephemeral key, sqlite).
+本地开发不需要 `.env` — 每个设置都有可用的默认值（临时 key、sqlite）。
 
-> **⚠️ Back these up before moving or redeploying:** the Fernet key (`TREG_SECRET_KEY`) and the
-> database (Postgres in prod; `treg.db` for a local sqlite run). Lose the Fernet key and every
-> stored secret becomes unrecoverable.
+> **⚠️ 迁移或重新部署前请备份：** Fernet key（`TREG_SECRET_KEY`）和
+> 数据库（生产用 Postgres；本地 sqlite 运行为 `treg.db`）。丢失 Fernet key 后，所有
+> 已存 secret 都将无法恢复。
 
-## Architecture
+## 架构
 
-**Request flow for `/call`:** resolve tool (by URL host + longest `base_url` prefix, or by name) →
-decrypt its secret(s) → apply each binding's injector → stream to the upstream → fire-and-forget
-audit record. The infra relay streams bytes without business logic. The call application buffers
-responses needing settlement or ownership evidence up to 8 MiB; larger responses return a 502
-without charging instead of a truncated success. Endpoints that inline media (Gemini images)
-declare `spooled_response`: their metered answer is read to a temp file instead, settled from its
-reported usage, and relayed whole. Authorized free final downloads needing no body
-evidence stream in full, as do own-key and own-tool responses.
+**`/call` 的请求流程：** 解析工具（按 URL 主机 + 最长 `base_url` 前缀，或按名称）→
+解密其 secret → 应用每个绑定的 injector → 流式转发到上游 → 以 fire-and-forget 方式
+写入审计记录。基础设施转发层只流式传输字节，不含业务逻辑。调用应用
+会缓冲需要结算或所有权凭证的响应，上限 8 MiB；更大的响应返回 502
+且不计费，而不是返回被截断的成功。内联媒体的端点（Gemini 图像）
+声明 `spooled_response`：其计量答案改为读入临时文件，依据其上报的
+用量结算，然后整体转发。无需响应体凭证的已授权免费最终下载会完整流式传输，
+自有 key 和自有工具的响应也是如此。
 
-**Module map** (`src/treg/`):
+**模块地图**（`src/treg/`）：
 
 
-| Module                                     | Role                                                                                                             |
+| 模块                                       | 职责                                                                                                             |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `proxy.py`                                 | `relay()` — the whole product in one function: a faithful streaming proxy                                        |
-| `injectors.py`                             | the auth-shape seam: `env`, `cli_auth`, `secret_file`, `oauth` place a secret into a header/query                |
-| `oauth.py`                                 | token freshness (single-flight refresh) + the connect flow (consent URL, code exchange)                          |
-| `health.py`                                | credential health: refresh oauth, probe tools, webhook the owner of anything broken                              |
-| `convert.py`                               | scaffold a skill directory into a registerable bundle manifest                                                   |
-| `api.py`                                   | the API — the only brain; CLI + skill are thin clients over it                                                   |
-| `cli.py`                                   | the `treg` CLI                                                                                                   |
-| `models.py`                                | SQLModel tables: `Org`, `User`, `Membership`, `Invite`, `Secret`, `Tool`, `Bundle`, `PendingOAuth`, `CallRecord` |
-| `crypto.py` `config.py` `db.py` `audit.py` | Fernet encryption + tokens · settings · async DB · deferred audit writer                                         |
+| `proxy.py`                                 | `relay()` — 整个产品浓缩在一个函数里：一个忠实的流式代理                                        |
+| `injectors.py`                             | 认证形态的接缝：`env`、`cli_auth`、`secret_file`、`oauth` 把一个 secret 放进头/查询参数                |
+| `oauth.py`                                 | token 新鲜度（single-flight 刷新）+ 连接流程（授权同意页 URL、授权码交换）                          |
+| `health.py`                                | 凭据健康：刷新 OAuth、探测工具、通过 webhook 通知任何失效项的属主                              |
+| `convert.py`                               | 把 skill 目录脚手架化为可注册的 bundle 清单                                                   |
+| `api.py`                                   | API — 唯一的大脑；CLI 和 skill 只是它之上的瘦客户端                                                   |
+| `cli.py`                                   | `treg` CLI                                                                                                   |
+| `models.py`                                | SQLModel 表：`Org`、`User`、`Membership`、`Invite`、`Secret`、`Tool`、`Bundle`、`PendingOAuth`、`CallRecord` |
+| `crypto.py` `config.py` `db.py` `audit.py` | Fernet 加密 + token · 配置 · 异步数据库 · 延迟写入的审计器                                         |
 
 
-**The 4 auth shapes** (per binding `injector`): `env` (plain string / API key) · `secret_file` (a
-JSON token file, pull a field) · `oauth` (a JSON OAuth token, auto-refreshed if refreshable) ·
-`cli_auth` (material lifted from a CLI's keychain).
+**4 种认证形态**（每个绑定的 `injector`）：`env`（纯字符串 / API key）· `secret_file`（一份
+JSON token 文件，取其中一个字段）· `oauth`（JSON OAuth token，可刷新时自动刷新）·
+`cli_auth`（从 CLI 钥匙串提取的凭据材料）。
 
-**Faithful-relay contract:** the proxy alters **only** three things, everything else is verbatim:
+**忠实转发契约：** 代理只改动**三样**东西，其余一切原样保留：
 
-1. hop-by-hop transport headers (re-derived per hop),
-2. treg's own control + edge-forwarding headers (`x-treg-token`, `x-treg-org`,
-`ngrok-skip-browser-warning`, `x-forwarded-*`, `via`, …) and treg's session cookie — all stripped,
-never leak upstream,
-3. the injected credential(s).
+1. 逐跳传输头（每一跳重新推导），
+2. treg 自己的控制头与边缘转发头（`x-treg-token`、`x-treg-org`、
+`ngrok-skip-browser-warning`、`x-forwarded-*`、`via` 等）以及 treg 的会话 cookie — 全部剥除，
+绝不泄漏到上游，
+3. 注入的凭据。
 
-**OAuth, three ways to get the first token:** *manual upload* (drop in a `token.json`) ·
-*auto-refresh* (if the token carries `refresh_token` + client creds, treg keeps it fresh, you never
-re-upload) · *hosted connect flow* (`treg oauth connect` → browser consent → treg captures the
-token itself).
+**OAuth，获取第一个 token 的三种方式：** *手动上传*（放入一份 `token.json`）·
+*自动刷新*（若 token 带 `refresh_token` + 客户端凭据，treg 会保持其新鲜，你无需
+重新上传）· *托管连接流程*（`treg oauth connect` → 浏览器授权同意 → treg 自行捕获
+token）。
 
-**Health checks:** give a tool an optional probe (`{method, path, expect_status}`); a periodic run
-(on demand or via cron) validates every credential, refreshes OAuth, and webhooks the owner of any
-that break.
+**健康检查：** 可以为工具配置可选的探测（`{method, path, expect_status}`）；周期性运行
+（按需或经 cron）会校验每个凭据、刷新 OAuth，并通过 webhook 通知失效项的属主。
 
-Deep design lives in [`docs/context/`](docs/context/README.md) (per-subsystem fragments).
+深入设计见 [`docs/context/`](docs/context/README.md)（按子系统拆分的片段）。
 
-## Tests
+## 测试
 
 ```bash
 uv run --with pytest-xdist pytest -n auto -q   # daily local default (same shape as CI)
 uv run --frozen python -m pytest -q            # serial: debugging one test, or order
 ```
 
-Coverage: proxy walking-skeleton, all injector shapes, per-user auth + CRUD + audit, skill composer,
-URL-passthrough + faithful relay, OAuth refresh + connect flow, health checks, `treg run`/shell,
-upload/scan, orgs + invites, the dashboard API, CLI.
+覆盖范围：代理 walking-skeleton、所有 injector 形态、按用户的认证 + CRUD + 审计、skill 组装器、
+URL 透传 + 忠实转发、OAuth 刷新 + 连接流程、健康检查、`treg run`/shell、
+upload/scan、组织 + 邀请、仪表盘 API、CLI。
 
-## Contributing & docs
+## 贡献与文档
 
 ```
 treg/
@@ -465,28 +466,27 @@ treg/
 └── pyproject.toml
 ```
 
-Per-subsystem design docs are **fragments** in `docs/context/`, each citing its `src/treg/*`
-sources. Working in this repo with an AI agent? The `/tools-registry-context` skill loads the
-right fragment for what you're touching and keeps the docs in sync — run
-`/tools-registry-context sync` before pushing.
+各子系统的设计文档是 `docs/context/` 中的**片段**，每个片段都标注其对应的 `src/treg/*`
+源码。在这个仓库里和 AI agent 一起工作？`/tools-registry-context` skill 会为你正在
+改动的部分加载正确的片段，并保持文档同步 — 推送前先运行
+`/tools-registry-context sync`。
 
-**Roadmap:** MCP support · finer permission tiers · at-rest key-management hardening · possible
-Loopni merge.
+**路线图：** MCP 支持 · 更细的权限层级 · 静态密钥管理加固 · 可能的
+Loopni 合并。
 
-## License
+## 许可证
 
-Apache 2.0 with additional terms ([`LICENSE`](LICENSE)): use it freely — including commercially,
-inside your own organization (self-hosting your own registry is encouraged). The restriction: don't
-redistribute the code to third parties as a competing hosted/managed registry service without written
-permission (`jason@superdesign.dev`). **Using the hosted treg.to API** inside your own product —
-with pass-through billing via `X-Treg-Meta` and `usage/by-tag` — is allowed without permission;
-that's calling our API, not redistributing our software.
+Apache 2.0 附加条款（[`LICENSE`](LICENSE)）：可自由使用 — 包括商业用途、
+在你自己的组织内部（鼓励自托管你自己的注册中心）。限制是：未经书面
+许可（`jason@superdesign.dev`），不得将代码作为竞争性的托管/受管注册中心服务再分发给
+第三方。**在自己产品中使用托管版 treg.to API** —
+通过 `X-Treg-Meta` 和 `usage/by-tag` 做透传计费 — 无需许可即可进行；
+那是在调用我们的 API，而不是在再分发我们的软件。
 
-### Pinned customer read scopes
+### 固定的客户读取范围
 
-For a restricted customer agent, `treg org agent-new bot --pin customer=cust_A` enforces attribution
-and scopes call/run history, archived results and shared-provider async ownership to that pin.
-Foreign or unattributed ids return 404; an unpinned operator keeps the org-wide view and shared
-balance. BYOK account access and public media URLs retain their existing permissions. See the
-[multi-tenancy contract](docs/context/architecture/multi-tenancy.md#caller-tags-and-pinned-read-scopes)
-for multiple pins, migration and replay behavior.
+对于受限的客户 agent，`treg org agent-new bot --pin customer=cust_A` 会强制归属，
+并把调用/运行历史、归档结果以及共享 provider 异步所有权的范围限定到该 pin。
+外来或未归属的 id 返回 404；未设置 pin 的操作者保留组织范围的视野和共享
+余额。BYOK 账号访问和公开媒体 URL 保留其现有权限。多个 pin、迁移与重放行为
+参见[多租户契约](docs/context/architecture/multi-tenancy.md#caller-tags-and-pinned-read-scopes)。

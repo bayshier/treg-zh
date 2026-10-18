@@ -1,127 +1,122 @@
-# Security policy
+# 安全策略
 
-## Reporting a vulnerability
+## 报告漏洞
 
-Please report suspected vulnerabilities **privately** — do not open a public issue.
+请**私下**报告疑似漏洞 — 不要创建公开 issue。
 
-Use GitHub's **[Private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)**
-(the "Report a vulnerability" button on the Security tab), or email **<jason@superdesign.dev>**.
+请使用 GitHub 的**[私下漏洞报告](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)**
+功能（Security 标签页上的 "Report a vulnerability" 按钮），或发送邮件至 **<jason@superdesign.dev>**。
 
-We aim to acknowledge a report within a few business days, agree on a disclosure timeline, and credit
-reporters who wish to be named.
+我们的目标是在几个工作日内确认收到报告，商定披露时间表，并
+对愿意署名的报告者致谢。
 
-## The security model (what protects your keys)
+## 安全模型（是什么在保护你的 key）
 
-tools-registry is built so that **reading the source does not help an attacker** — nothing load-bearing
-is hidden in the code. Secrets live in the database (encrypted with a Fernet key held only in the server
-environment) and enforcement happens server-side and in the operating system.
+tools-registry 的设计原则是**阅读源码对攻击者没有帮助** — 代码中没有隐藏任何承重的
+安全机制。secret 存放在数据库中（使用仅存在于服务器环境中的 Fernet key 加密），
+强制执行发生在服务端和操作系统层面。
 
-Durable objects created with a shared provider credential are assigned to one organization before
-their upstream id is exposed. Every shared-key read, use, update, or delete checks that assignment
-before contacting the provider; unknown and cross-organization ids return the same denial. If a
-create succeeds upstream but ownership cannot be committed, treg attempts compensating deletion and
-returns an error without exposing the unmanaged id. BYOK objects remain scoped by the customer's
-provider account and bypass this platform ownership table.
+使用共享 provider 凭据创建的持久对象，会在其上游 id 暴露之前先归属到
+某一个组织。每一次对共享 key 对象的读取、使用、更新或删除，都会在联系 provider
+之前先校验该归属；未知 id 和跨组织 id 返回相同的拒绝。如果创建在上游成功
+但所有权无法提交，treg 会尝试补偿性删除并返回错误，且不暴露这个未纳管的 id。BYOK
+对象仍以客户的 provider 账号为范围，不经过这张平台所有权表。
 
-- **The proxy never hands the key to the caller.** For an HTTP tool, the registry injects the credential
-  server-side and makes the upstream call; the consumer's token only authorizes it.
-- **Encryption at rest.** Stored secrets are Fernet-encrypted; the key is an environment variable, never
-  in the repo or the database.
-- **CLI pairing is shared and single-use.** `treg login` keeps its pairing and social-login return
-  state in the database with ten-minute validity windows. Pairing codes and completed credentials
-  are encrypted, approval attempts are serialized, and polling atomically consumes a result.
-  Storage failures refuse the operation; there is no process-local fallback. Workers must share
-  the database, encryption key and session-signing secret. A lost response after consumption requires
-  starting a new login; credentials are never republished to make a retry succeed.
-  Expired CLI rows are cleaned in bounded batches outside the pairing transaction. On rollout,
-  an in-flight login from an old worker may need to restart once because its local state cannot
-  be read by the new workers.
-- **Tenant isolation.** Every secret, tool, and record is scoped to an org; access is gated by role and,
-  per member, by an explicit tool allow-list. Pinned agent tags additionally scope call/run history,
-  archived results and shared-provider async ownership; foreign and untagged records return 404.
-  These scopes do not partition a team's BYOK account or authenticate public media URLs.
-- **SSRF guard.** A tool's upstream host is re-resolved at call time and internal/metadata addresses are
-  refused (defeats DNS-rebinding).
-- **Local runs are sandboxed.** `treg run` on a member's machine executes the CLI as a locked-down
-  `treg-run` user, with an egress allow-list and an optional filesystem jail, so a shared key can't be
-  read, exfiltrated over the network, or written to a member-readable file.
-- **Server runs are resource-limited.** `treg run --server` executes each CLI with a scrubbed environment
-  (treg's own secrets removed), a per-run throwaway home, an allow-list of runnable commands, output
-  redaction, and POSIX resource limits (CPU, file size, no core dumps).
-- **Signup credit belongs to a verified account, once.** Only an email OTP, provider-verified
-  Google/GitHub email, or inbox-only invitation link marks an identity verified. Legacy `POST /users`
-  and admin-visible invitation codes do not. `claim_signup_promo` atomically consumes the user's
-  eligibility in the same transaction as the money grant; team deletion never restores it. Accounts
-  predating revision `0033` receive no new automatic grant; their existing balances are unchanged.
-  New identities can still be farmed through verified inboxes, so this is not a one-human guarantee.
-  `TREG_PROMO_GRANT_MICRO=0` stops new automatic grants after deployment. The domain blocklist
-  (`TREG_BLOCKED_EMAIL_DOMAINS`, unset means no blocks) remains a configurable speed bump at every
-  sign-in/sign-up door and both team-creating endpoints; it fails open on classifier errors.
-  Suspend abusive users and teams separately, retaining their records for investigation.
-- **Designated sign-in codes are a password, stored only as a hash.** `TREG_FIXED_LOGIN_CODES`
-  (unset by default) maps an email with no inbox, such as an app directory reviewer's demo account,
-  to the SHA-256 of a fixed code. The email-code door then sends nothing and accepts only that code,
-  under the same five-guess and start limits as an emailed code. Use a long random code, give the
-  account a dedicated team with sample data only, and rotate by changing the hash.
+- **代理绝不把 key 交给调用方。** 对 HTTP 工具，注册中心在服务端注入凭据
+  并发起上游调用；使用方的 token 仅用于授权该调用。
+- **静态加密。** 存储的 secret 以 Fernet 加密；key 是一个环境变量，绝不出现在
+  仓库或数据库中。
+- **CLI 配对状态是共享的，且一次性使用。** `treg login` 将其配对状态和社交登录返回
+  状态保存在数据库中，有效期十分钟。配对码和已完成的凭据
+  均加密存储，审批尝试被串行化，轮询以原子方式消费结果。
+  存储失败会拒绝该操作；没有进程本地的回退。各 worker 必须共享
+  数据库、加密 key 和会话签名 secret。结果被消费后若响应丢失，只能重新发起
+  登录；绝不会为了让重试成功而重新发布凭据。
+  过期的 CLI 记录会在配对事务之外、以有界批次清理。发布上线时，
+  来自旧 worker 的进行中的登录可能需要重启一次，因为其本地状态无法
+  被新 worker 读取。
+- **租户隔离。** 每个 secret、工具和记录都以组织为范围；访问由角色把关，并按
+  成员施以明确的工具允许清单。固定的 agent 标签（pin）还会额外限定调用/运行历史、
+  归档结果以及共享 provider 异步所有权的范围；外来和未打标的记录返回 404。
+  这些范围不会分割团队的 BYOK 账号，也不会用于认证公开媒体 URL。
+- **SSRF 防护。** 工具的上游主机在调用时重新解析，内部/元数据地址一律
+  拒绝（可防御 DNS 重绑定）。
+- **本地运行是沙箱化的。** 在成员机器上执行 `treg run` 时，CLI 以受限的
+  `treg-run` 用户身份运行，带有出站允许清单和可选的文件系统监牢，因此共享 key 无法被
+  读取、通过网络外泄或写入成员可读的文件。
+- **服务器运行有资源限制。** `treg run --server` 以净化后的环境
+  （移除 treg 自己的 secret）、每次运行独立的一次性 home、可运行命令的允许清单、输出
+  脱敏以及 POSIX 资源限制（CPU、文件大小、禁用 core dump）来执行每个 CLI。
+- **注册赠金属于已验证账号，且仅一次。** 只有邮箱 OTP、经 provider 验证的
+  Google/GitHub 邮箱，或仅限收件箱的邀请链接才能将身份标记为已验证。旧式 `POST /users`
+  和管理员可见的邀请码则不能。`claim_signup_promo` 会在发放资金的同一个事务中
+  以原子方式消费用户的资格；删除团队永远不会恢复该资格。早于修订 `0033` 的账号
+  不会获得新的自动发放；其现有余额保持不变。
+  新身份仍可通过已验证的收件箱被批量制造，因此这并不是「一人一号」的保证。
+  `TREG_PROMO_GRANT_MICRO=0` 可在部署后停止新的自动发放。域名黑名单
+  （`TREG_BLOCKED_EMAIL_DOMAINS`，未设置即不拦截）仍是每个
+  登录/注册入口和两个创建团队端点上一道可配置的减速带；分类器出错时它按放行处理。
+  对滥用的用户和团队应分别停用，并保留其记录以供调查。
+- **指定的登录码等同于密码，仅以哈希存储。** `TREG_FIXED_LOGIN_CODES`
+  （默认未设置）把一个没有真实收件箱的邮箱（例如应用目录审核员的演示账号）
+  映射到某个固定验证码的 SHA-256。此后邮箱验证码入口不再发送任何内容，只接受该验证码，
+  并受到与邮件验证码相同的五次猜测限制和发起频率限制。请使用足够长的随机验证码，
+  给该账号一个只含示例数据的专属团队，并通过更换哈希来轮换。
 
-## Archive object storage credentials
+## 归档对象存储凭据
 
-R2 credentials are server environment settings (`TREG_ARCHIVE_OBJECT_STORE_ACCESS_KEY_ID` and
-`TREG_ARCHIVE_OBJECT_STORE_SECRET_ACCESS_KEY`), never catalog credentials or caller input. Use a token scoped
-to the private archive bucket with object read/write access; bucket administration is unnecessary.
-The configured endpoint must be an HTTPS Cloudflare R2 account endpoint. Object names are always
-SHA-256 hashes computed by treg; clients cannot supply an object path, bucket, host or URL.
-The obstore compiled wheel exists only in the server extra and is imported lazily by the
-server factory, initialized by bootstrap. Its shared Rust HTTP client uses configured connect and
-request timeouts and zero SDK retries; archive_bodies owns retry policy. SDK exceptions, signed
-requests, credentials and response bodies are not included in archive telemetry.
+R2 凭据是服务器环境设置（`TREG_ARCHIVE_OBJECT_STORE_ACCESS_KEY_ID` 和
+`TREG_ARCHIVE_OBJECT_STORE_SECRET_ACCESS_KEY`），绝不是工具目录凭据或调用方输入。请使用一个限定
+于私有归档桶、具备对象读写权限的 token；无需桶管理权限。
+所配置的端点必须是 HTTPS 的 Cloudflare R2 账号端点。对象名始终是由 treg 计算的
+SHA-256 哈希；客户端无法提供对象路径、桶、主机或 URL。
+obstore 的编译版 wheel 只存在于 server extra 中，由服务器工厂延迟导入，
+经 bootstrap 初始化。其共享的 Rust HTTP 客户端使用配置的连接与
+请求超时，SDK 层零重试；重试策略由 archive_bodies 负责。SDK 异常、签名
+请求、凭据和响应体均不包含在归档遥测中。
 
-obstore S3Store uses `checksum_algorithm=SHA256` and single-part PUT. R2 validates the transmitted
-SHA-256 checksum before PUT succeeds; only then can a DB pointer be committed. PUT performs no
-follow-up HEAD. HEAD makes one request for object size. No custom digest metadata is written or
-required. GET enforces the size limit and checks downloaded bytes against the object's SHA-256
-hash. The bucket is not public and no object URL is exposed: call-history authorization checks
-the team's CallRecord before resolving its archive reference. A hash is an identity, not an
-access credential. Upstream answers are retained under the existing archive policy. A provider
-that echoes treg's PLATFORM credential in a 2xx body is not sanitized by these guards (judge that
-provider's `cache` with it in mind); an answer that echoes a team's OWN credential is refused by
-the recorder (`_echoes_own_credential`). An own-credential answer is stored under a cache key that
-folds in the org (or the connection, on an `own_account` endpoint), so another team never computes
-the hash that would find it; only an endpoint-level `cache.sharing: public` declaration puts such an
-answer on the public key.
+obstore 的 S3Store 使用 `checksum_algorithm=SHA256` 和单段 PUT。R2 会在 PUT 成功前校验所传输的
+SHA-256 校验和；只有校验通过后才能提交数据库指针。PUT 不做后续
+HEAD。HEAD 只发一次请求获取对象大小。不写入也不要求自定义摘要元数据。
+GET 会强制执行大小限制，并将下载的字节与对象的 SHA-256
+哈希比对。该桶不公开，也不暴露任何对象 URL：调用历史的授权会
+先检查团队的 CallRecord，再解析其归档引用。哈希是身份标识，不是
+访问凭据。上游应答按现有归档策略保留。若某 provider 在 2xx 响应体中
+回显了 treg 的 PLATFORM 凭据，这些防护不会对其消毒（评估该 provider 的 `cache` 时请将此
+考虑在内）；回显团队 OWN 凭据的应答会被记录器拒绝（`_echoes_own_credential`）。
+自有凭据的应答会存储在一个混入组织（在 `own_account` 端点上则是连接）的缓存键下，
+因此其他团队永远算不出能找到它的哈希；只有端点级的 `cache.sharing: public` 声明
+才会把这样的应答放到公开键上。
 
-Object I/O never holds the calling task's database connection. Startup refuses incomplete R2
-configuration when archive mode is enabled and any storage switch selects R2. The manual smoke
-script accepts only `treg-archive-dev`, refuses CI, and skips absent credentials. It creates no
-cloud resources apart from one small test object. Production configuration belongs in the private ops project.
+对象 I/O 绝不占用调用任务的数据库连接。当归档模式启用且任一存储开关选择了 R2 时，
+启动会拒绝不完整的 R2 配置。手动冒烟脚本只接受 `treg-archive-dev`，在 CI 中拒绝运行，
+并跳过缺失的凭据。除一个小型测试对象外，
+它不创建任何云资源。生产配置应放在私有的运维项目中。
 
-## Picture storage (avatars and /showcase pictures)
+## 图片存储（头像和 /showcase 图片）
 
-Pictures use their own credentials and buckets (`TREG_MEDIA_*`), never the archive's: a private
-STAGING bucket every upload lands in, and a PUBLIC bucket where treg publishes (an avatar once its
-owner sets it, a /showcase picture once staff approve it). treg writes and deletes only under `img/`
-in the public bucket, which may hold other files (page videos); never give that bucket a lifecycle
-rule that is not limited to its own prefix. Scope one token to these two buckets with object
-read/write access. The endpoint must be https; only `http://localhost`
-(a local MinIO) is accepted over plain HTTP.
+图片使用自己的凭据和桶（`TREG_MEDIA_*`），绝不使用归档的：一个私有的
+STAGING 桶，所有上传先落在其中；以及一个 PUBLIC 桶，treg 在此发布（头像在其
+所有者设置后发布，/showcase 图片在工作人员审核通过后发布）。treg 只在公开桶的 `img/`
+下写入和删除，该桶可能还存放其他文件（页面视频）；绝不要给这个桶设置不限于
+自身前缀的生命周期规则。为一个 token 授权这两个桶的对象读写权限即可。
+端点必须是 https；只有 `http://localhost`
+（本地 MinIO）接受明文 HTTP。
 
-Every upload is checked before it is decoded (size cap, leading bytes must be PNG, JPEG or WebP; SVG
-and GIF are refused), decoded under a pixel cap, and re-drawn from its pixels into fixed sizes, so
-metadata and anything appended to the original are discarded. Files are named by the SHA-256 of the
-re-drawn picture: clients never supply a path, bucket, host or URL, and a name never changes
-meaning. Staged pictures are served only to signed-in people (`private, no-store`), the public
-bucket through a media domain or treg's `/media-files/`; bytes from treg's origin carry `nosniff`
-and `sandbox`. Picture storage I/O never holds a database connection. Give the staging bucket a
-lifecycle rule that expires objects after about 30 days; nothing else cleans it. Public pictures no
-row names any more are deleted by `treg-worker media sweep`.
+每次上传都会在解码前接受检查（大小上限，文件头部字节必须是 PNG、JPEG 或 WebP；SVG
+和 GIF 一律拒绝），在像素上限内解码，并从其像素重新绘制为固定尺寸，因此
+元数据以及追加在原始文件后的任何内容都会被丢弃。文件以重绘后图片的 SHA-256 命名：
+客户端永远不提供路径、桶、主机或 URL，同一个名称的含义也永远不会改变。暂存的图片只向已登录用户提供（`private, no-store`），公开
+桶则通过媒体域名或 treg 的 `/media-files/` 提供；来自 treg 源站的字节带有 `nosniff`
+和 `sandbox`。图片存储 I/O 绝不占用数据库连接。请给暂存桶设置一个约 30 天后过期对象的生命周期规则；除此之外没有其他清理机制。不再被任何行引用的公开图片由 `treg-worker media sweep` 删除。
 
-## Known limitations (by design, documented on purpose)
+## 已知局限（有意为之，并有意记录在案）
 
-**Server runs do not yet have filesystem/network isolation.** The resource limits above cap denial of
-service, but a full jail (a locked-down user + egress allow-list, like the local sandbox) requires a
-container deployment and is planned. In the supported hosted configuration the encryption key is
-an environment variable rather than an on-disk secret file, and only allow-listed CLIs may run.
+**服务器运行尚无文件系统/网络隔离。** 上述资源限制只能遏制拒绝服务，
+但完整的监牢（受限用户 + 出站允许清单，与本地沙箱相同）需要
+容器化部署，已在计划中。在受支持的托管配置中，加密 key 是
+环境变量而非磁盘上的 secret 文件，且只允许运行允许清单内的 CLI。
 
-## Supported versions
+## 支持的版本
 
-This project is pre-1.0; security fixes land on `main`. Pin a commit if you need stability.
+本项目尚未达到 1.0；安全修复直接进入 `main`。如需稳定性，请固定到某个 commit。

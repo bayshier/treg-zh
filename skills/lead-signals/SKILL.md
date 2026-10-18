@@ -1,83 +1,66 @@
 ---
 name: lead-signals
-description: Use when the user wants to find buyers, warm or hot leads, or in-market accounts; asks about buying signals, intent signals or trigger events; wants to know who is complaining about a problem, engaging with a post, hiring for a role, changing jobs, raising money or adopting a tool; or wants to monitor a topic, a competitor or a list of accounts for people ready to buy.
+description: 当用户想寻找买家、温热线索或有购买意向的目标客户；询问购买信号、意向信号或触发事件；想知道谁在抱怨某个问题、与相关帖子互动、为某类职位招聘、换工作、融资或采用新工具；或想监视某个话题、竞争对手或一批账号以发现准备购买的人时使用。
 ---
 
-# Lead signals
+# 销售线索信号
 
-A signal is a public fact that makes a conversation timely: someone complained about the problem you
-solve, engaged with a post about it, hired for it, raised money, switched tools.
+信号是一条让沟通时机恰到好处的公开事实：有人抱怨了你所解决的问题、与相关帖子互动、为此招聘、融了资、或更换了工具。
 
-Runs on treg. If it isn't set up (`treg --version` fails), read https://treg.to/llms.txt and follow it to
-install and sign in, then come back here.
+依赖 treg 运行。如果尚未设置（`treg --version` 失败），请阅读 https://treg.to/llms.txt 并按其中的指引完成安装和登录，然后再回到本文件。
 
-## The run
+## 执行流程
 
-1. **Detect** raw signals for the user's buyer.
-2. **Qualify.** Drop the noise; most runs discard more than half. A signal list is not a lead list.
-3. **Contact.** Company → decision maker → work email, only for rows that survived.
-4. **Hand back** a ranked list: person, company, the signal, *why now* in one line, source link, email
-   if found. State coverage plainly: "1,180 engaged, 800 emails found".
+1. **探测**与用户买家相关的原始信号。
+2. **筛选。**剔除噪音；大多数运行会丢弃一半以上。信号清单不等于线索清单。
+3. **联系。**公司 → 决策人 → 工作邮箱，只针对筛选后留下的行。
+4. **交付**一份按优先级排序的清单：人、公司、信号、一行说明*为何是现在*、来源链接，以及找到的邮箱。如实说明覆盖情况："1,180 人有互动，找到 800 个邮箱"。
 
-Default for "find buyers for X" or "monitor Y": search posts about the pain on LinkedIn, X and Reddit →
-read the comments and reactions on the best posts → keep people whose title fits → roll them up by
-company and score → decision makers and emails at the top companies.
+针对"为 X 寻找买家"或"监视 Y"的默认流程：在 LinkedIn、X 和 Reddit 上搜索关于该痛点的帖子 → 读取最佳帖子的评论和互动 → 保留头衔匹配的人 → 按公司归并并打分 → 在头部公司中找决策人和邮箱。
 
-## Signals
+## 信号
 
-The vendors are examples of who answers today, not a list to stick to: search, and take whatever
-the catalog ranks best now.
+表中的服务商只是当前由谁应答的举例，不必拘泥于这份清单：请自行搜索，以工具目录当前排名最高的为准。
 
-| Signal | Search the catalog for | Example vendors | Keep | Drop |
+| 信号 | 在工具目录中搜索 | 示例服务商 | 保留 | 剔除 |
 | --- | --- | --- | --- | --- |
-| Posts and complaints | "search linkedin posts", "search reddit posts", "search x posts" | HarvestAPI, AnyAPI, ScrapeCreators | first-person pain, last 7 days, names you or a competitor | vendors, recruiters, consultants selling to the same crowd |
-| Post engagers | "linkedin post comments", "post reactions" | HarvestAPI, Fetchin | commented beats reacted; title fits | the author's colleagues, "great post" |
-| Reviews | "google reviews" | Serper, AnyAPI | low stars about the job you do | reviews older than a quarter |
-| Hiring | "job postings" | HarvestAPI, PredictLeads, Apollo | a role that implies your product, last 30 days, several roles | staffing firms, evergreen reposts |
-| Job change | "job change" | Datagma, LeadMagic | moved in the last 90 days into a company that fits; a former user | moves inside the same group |
-| Funding | "funding rounds" | PredictLeads, Aviato | last 90 days, stage fits your price | debt read as growth |
-| Tech adoption | "technology users", "tech stack" | PredictLeads, Tomba | a tool added or removed recently: a competitor or an integration | tags every site has |
-| Headcount | "headcount", "workforce" | CompanyEnrich, Akta | direction and rate in your buyer's team | jumps from an acquisition |
-| News | "company news" | PredictLeads, Akta | launch, acquisition, exec hire, last 30 days | syndicated duplicates |
-| Ads | "ads library" | Meta Ad Library, Adyntel | live campaigns: budget and an offer to position against | |
+| 帖子与抱怨 | "search linkedin posts", "search reddit posts", "search x posts" | HarvestAPI, AnyAPI, ScrapeCreators | 第一人称的痛点、最近 7 天、提到你或竞争对手 | 服务商、猎头、向同一人群推销的咨询顾问 |
+| 帖子互动者 | "linkedin post comments", "post reactions" | HarvestAPI, Fetchin | 评论优于点赞；头衔匹配 | 作者的同事、"写得好"式的评论 |
+| 评论 | "google reviews" | Serper, AnyAPI | 与你业务相关的低星评价 | 超过一个季度的旧评价 |
+| 招聘 | "job postings" | HarvestAPI, PredictLeads, Apollo | 暗示需要你产品的职位、最近 30 天、多个职位 | 人力派遣公司、常年挂着的重复职位 |
+| 职位变动 | "job change" | Datagma, LeadMagic | 最近 90 天内跳槽到匹配公司的；曾是你产品用户的人 | 同一集团内部的调动 |
+| 融资 | "funding rounds" | PredictLeads, Aviato | 最近 90 天、轮次与你的定价匹配 | 把债务当作增长 |
+| 技术采用 | "technology users", "tech stack" | PredictLeads, Tomba | 近期新增或移除的某款工具：可能是竞争对手或集成机会 | 每个网站都有的通用标签 |
+| 团队规模 | "headcount", "workforce" | CompanyEnrich, Akta | 买家团队的人数走向和增速 | 因收购导致的跳增 |
+| 新闻 | "company news" | PredictLeads, Akta | 发布、收购、高管到任，最近 30 天 | 联合发布的重复报道 |
+| 广告 | "ads library" | Meta Ad Library, Adyntel | 投放中的广告活动：预算和可用于对位的优惠 | |
 
-Anything else is a composition. A page change: scrape the page, keep a hash, compare next run. Custom
-intent: a Google search such as `"migrating from <competitor>"`. Repo stars: GitHub with the team's own
-token.
+其余信号靠组合实现。页面变化：抓取页面、保存哈希、下次运行时对比。自定义意向：用 Google 搜索诸如 `"migrating from <competitor>"` 之类的查询。仓库星标：用团队自己的 token 调 GitHub。
 
-## Finding the endpoint
+## 查找端点
 
-The catalog changes every week, so never trust a remembered endpoint id.
+工具目录每周都在变化，所以绝不要依赖记忆中的端点 id。
 
-1. `treg catalog search "<the job in plain words>"`, not a vendor name.
-2. Prefer a routed `treg.*` endpoint when there is one: the team's own keys first, then providers in
-   order, and most misses are free.
-3. `treg catalog get <id>`: the price, the **hit rate** (it found something), not just works (it
-   returned 200), and the row's note.
-4. One small call first. Read the reported charge and `_treg.served_by`, then scale.
-5. Nothing fits: `treg catalog request "<what is missing>"`.
+1. `treg catalog search "<用平实语言描述的任务>"`，而不是服务商名称。
+2. 有路由型 `treg.*` 端点时优先使用：先尝试团队自己的密钥，再按顺序尝试各服务商，且大多数未命中是免费的。
+3. `treg catalog get <id>`：查看价格、**命中率**（真的找到了结果），而不仅是可用（返回 200），以及该行的备注。
+4. 先做一次小规模调用。查看报告的扣费和 `_treg.served_by`，然后再放量。
+5. 都不合适：`treg catalog request "<缺少什么>"`。
 
-For emails use the routed finder, `treg.people.email.find`, and always send
-`X-Treg-Route-Max-Cost: 0.05`; uncapped, a miss can walk up to the dearest provider.
+查邮箱请使用路由端点 `treg.people.email.find`，并始终带上 `X-Treg-Route-Max-Cost: 0.05`；不设上限时，一次未命中可能一路试到最贵的服务商。
 
-## Score
+## 打分
 
-Fit first (no fit, no row), then timing (fresher wins), then strength (two independent signals on one
-account beat one). Every row carries its reason in the user's words.
+先看匹配度（不匹配就不入列），再看时机（越新越好），最后看强度（同一账号上的两个独立信号胜过一个）。每一行都要用用户能理解的语言写明理由。
 
-## Keep watching
+## 持续监视
 
-When the user wants it recurring:
+当用户希望定期执行时：
 
-1. Run once and report what it cost (sum the reported charges): that is the price of each run.
-2. Keep `signals.csv` keyed by person URL, signal and source URL. Later runs report only new keys. The
-   first run is the baseline; say so.
-3. Schedule it with the user's agent: Claude Code `/schedule` (a cloud routine) or `/loop` (while the
-   session is open), Codex `codex exec "<prompt>"` from cron, any other agent its own scheduler. The
-   scheduled run needs `TREG_TOKEN` (an agent token from `treg org agent-new`) and a place for
-   `signals.csv` it can read and write, such as a repo file or a sheet.
+1. 先运行一次并报告花费（把报告的扣费加总）：这就是每次运行的价格。
+2. 维护 `signals.csv`，以人物 URL、信号和来源 URL 为键。后续运行只报告新增的键。首次运行是基线；要向用户说明这一点。
+3. 用用户的 agent 调度：Claude Code 用 `/schedule`（云端例程）或 `/loop`（会话开启期间），Codex 用 cron 跑 `codex exec "<prompt>"`，其他 agent 用各自的调度器。定时运行需要 `TREG_TOKEN`（通过 `treg org agent-new` 签发的 agent token），以及一个它可读写的 `signals.csv` 存放位置，例如仓库文件或在线表格。
 
-## Before the first list
+## 交付第一份清单之前
 
-Say once: outreach to EU and UK people needs a lawful basis, and suppression and unsubscribe lists
-come first. Then hand over the list; the user decides how to use it.
+提醒一次：对欧盟和英国人群做外联需要有合法依据，且屏蔽名单和退订名单要放在首位。然后交付清单；如何使用由用户决定。

@@ -1,8 +1,8 @@
-# Contributing to tools-registry
+# 参与 tools-registry 贡献
 
-Thanks for your interest!
+感谢你的关注！
 
-## Getting set up
+## 环境搭建
 
 ```bash
 git clone https://github.com/superdesigndev/treg
@@ -12,59 +12,58 @@ uv sync                     # install deps (uv >= 0.12, pinned in pyproject - ht
 uv run --with pytest-xdist pytest -n auto -q   # daily local default (same shape as CI)
 ```
 
-No `.env` needed for dev — every setting has a working default (ephemeral encryption key, local
-sqlite). The `TREG_*` knobs for persistence / a real deployment are documented in the README's
-**Configuration** section (and `docs/context/ops/deploy.md`).
+开发时不需要 `.env` — 每个设置都有可用的默认值（临时加密 key、本地
+sqlite）。用于持久化 / 真实部署的 `TREG_*` 配置项在 README 的 **配置**
+一节（以及 `docs/context/ops/deploy.md`）中有说明。
 
-A one-command local stack is in `scripts/dev-local.sh` (`up` / `logs` / `cli` / `reset`).
-It starts Python on :18790 and Vite on :5173; open `http://localhost:18790/app`.
-`TREG_DEV_DB=/absolute/path/to/dev.db` selects a separate local database without resetting another.
+一条命令即可启动的本地技术栈在 `scripts/dev-local.sh`（`up` / `logs` / `cli` / `reset`）。
+它会在 :18790 启动 Python、在 :5173 启动 Vite；打开 `http://localhost:18790/app`。
+`TREG_DEV_DB=/absolute/path/to/dev.db` 可以选用一个独立的本地数据库，而不会重置另一个。
 
-The Dashboard source is in `frontend/src/`: `.vue` pages, components and dialogs, feature use cases
-in `state/`, and a typed JSON client in `api.ts`. `frontend/index.html` is only the document entry.
-Run `npm --prefix frontend test` for transport tests and `npm --prefix frontend run test:e2e` for
-browser flows against a disposable SQLite server. Install Chromium first with
-`cd frontend && npx playwright install chromium`.
+仪表盘源码在 `frontend/src/`：`.vue` 页面、组件和对话框，功能用例
+在 `state/`，类型化 JSON 客户端在 `api.ts`。`frontend/index.html` 只是文档入口。
+运行 `npm --prefix frontend test` 做传输层测试，运行 `npm --prefix frontend run test:e2e`
+针对一次性 SQLite 服务器做浏览器流程测试。先用
+`cd frontend && npx playwright install chromium` 安装 Chromium。
 
-Before `uv build`, run `bash scripts/build-dashboard.sh`. The wheel and sdist include the resulting
-assets; installing a published package needs no Node runtime. Editable Python installs do not
-require a frontend build, so CLI and background-worker development remains independent.
+在 `uv build` 之前，先运行 `bash scripts/build-dashboard.sh`。wheel 和 sdist 会包含构建出的
+资源；安装已发布的包不需要 Node 运行时。可编辑（editable）的 Python 安装不
+需要前端构建，因此 CLI 和后台 worker 的开发保持独立。
 
-## Project layout
+## 项目结构
 
-- `src/treg/` — the app (FastAPI API, proxy, CLI, runners). The **design docs** in `docs/context/` explain
-  each subsystem and cite the source files they cover — read the relevant fragment before changing code.
-- `tests/` — the test suite (pytest). New behavior needs a test.
-- `docs/context/` — per-subsystem design fragments (the source of truth for "how it works").
+- `src/treg/` — 应用本体（FastAPI API、代理、CLI、运行器）。`docs/context/` 中的**设计文档**
+  解释每个子系统并标注其覆盖的源码文件 — 改代码前先读对应片段。
+- `tests/` — 测试套件（pytest）。新行为必须有测试。
+- `docs/context/` — 按子系统拆分的设计片段（「它如何工作」的唯一事实来源）。
 
-## Making a change
+## 进行改动
 
-1. Branch off `main`.
-2. Match the surrounding style — plain Python with type hints, no new dependencies without a reason.
-   Commit messages follow Conventional Commits (`feat(scope): …`, `fix: …`, `docs: …`).
-3. Add or update tests; run `uv run --with pytest-xdist pytest -n auto -q` (all green).
-   Serial `uv run --frozen python -m pytest -q` is for debugging one test or order.
-   Against Postgres, set `TREG_TEST_DB_URL`; each xdist worker creates its own database from it.
-   Tests must pass in any order. To check, shuffle with a few seeds (pytest-randomly is not a
-   project dependency, so CI order stays fixed):
-   `uv run --with pytest-xdist --with pytest-randomly pytest -n auto -q -p randomly --randomly-seed=<n>`.
-   Restore whatever a test changes: `monkeypatch.chdir`, `monkeypatch.setenv`, `tmp_path`, and
-   repo files resolved from `Path(__file__).parents[1]`, not the working directory.
-4. If you changed a subsystem, update its fragment in `docs/context/` in the same PR.
-5. Open a PR. CI runs the tests + a secret scan; a maintainer reviews.
+1. 从 `main` 分出分支。
+2. 与周边代码风格保持一致 — 带类型注解的朴素 Python，没有充分理由不引入新依赖。
+   提交信息遵循 Conventional Commits（`feat(scope): …`、`fix: …`、`docs: …`）。
+3. 添加或更新测试；运行 `uv run --with pytest-xdist pytest -n auto -q`（全部通过）。
+   串行模式 `uv run --frozen python -m pytest -q` 用于调试单个测试或执行顺序。
+   针对 Postgres 测试时，设置 `TREG_TEST_DB_URL`；每个 xdist worker 会依据它创建自己的数据库。
+   测试必须以任意顺序通过。要验证这一点，可用几个种子打乱顺序（pytest-randomly 不是
+   项目依赖，因此 CI 的顺序保持固定）：
+   `uv run --with pytest-xdist --with pytest-randomly pytest -n auto -q -p randomly --randomly-seed=<n>`。
+   测试改动的任何东西都要恢复：`monkeypatch.chdir`、`monkeypatch.setenv`、`tmp_path`，
+   仓库文件用 `Path(__file__).parents[1]` 解析，而不是用工作目录。
+4. 如果改动了某个子系统，请在同一个 PR 中更新它在 `docs/context/` 里的片段。
+5. 发起 PR。CI 会运行测试 + secret 扫描；由维护者评审。
 
-## What to work on
+## 可以做些什么
 
-The roadmap lives at the end of [`README.md`](README.md) (MCP support, finer permission tiers,
-key-management hardening). Bug reports and small fixes are welcome anytime; for a larger feature,
-open an issue first so we can agree on the approach before you invest in it.
+路线图在 [`README.md`](README.md) 末尾（MCP 支持、更细的权限层级、
+密钥管理加固）。bug 报告和小修复随时欢迎；较大的功能
+请先开一个 issue，让我们在你投入之前先就方案达成一致。
 
-## Reporting bugs / security issues
+## 报告 bug / 安全问题
 
-Normal bugs → a GitHub issue. **Security vulnerabilities → see [SECURITY.md](SECURITY.md)** (report
-privately, never in a public issue).
+一般 bug → 提 GitHub issue。**安全漏洞 → 参见 [SECURITY.md](SECURITY.md)**（私下
+报告，切勿开公开 issue）。
 
-## Code of conduct
+## 行为准则
 
-Be kind and constructive. Harassment or personal attacks are not tolerated; maintainers may remove
-comments or contributors that cross that line.
+保持友善和建设性。不容忍骚扰或人身攻击；越线的评论或贡献者可能会被维护者移除。

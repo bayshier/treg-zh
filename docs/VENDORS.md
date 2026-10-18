@@ -1,82 +1,57 @@
-# List your API on treg
+# 把你的 API 上架到 treg
 
-treg is the tool catalog for AI agents: ~2,600 endpoints across ~40 providers, discoverable by
-*capability* ("get a domain's backlink summary") rather than by vendor name. Agents search the
-catalog, compare providers side by side on price / measured success rate / speed, and call your
-API through treg's proxy with the credential injected server-side.
+treg 是面向 AI agent 的工具目录：约 2,600 个端点，覆盖约 40 家服务商，按*能力*（「查询某个域名的反向链接摘要」）而非服务商名称来发现。agent 搜索工具目录，把各家服务商在价格 / 实测成功率 / 速度上并排比较，然后通过 treg 的代理调用你的 API，凭据由服务端注入。
 
-**What listing gets you:**
+**上架能带来什么：**
 
-- **Discovery** — every agent connected to a treg deployment can find your endpoints when they
-  search for the job your API does, next to (and compared against) your competitors.
-- **Zero-friction customers** — teams that connect their own key to your API call you directly;
-  you keep the billing relationship. treg never sits between you and your customer's account.
-- **Metered platform traffic (optional)** — if your pricing is published and machine-checkable,
-  treg can serve your endpoints on *its own* key, metered per call from teams' prepaid balances.
-  That means paid usage from teams that never signed up with you. See "Platform-eligible" below.
+- **可发现性**——每个连接到 treg 部署的 agent，在搜索你的 API 所完成的工作时都能找到你的端点，与你的竞争对手并列出现（并被放在一起比较）。
+- **零摩擦的客户**——把自己的密钥连接到你 API 的团队会直接调用你；计费关系保留在你手中。treg 永远不会插在你和客户的账号之间。
+- **按量计费的平台流量（可选）**——如果你的定价已公开且可被机器核验，treg 可以用*自己的*密钥对外提供你的端点，按次从团队的预充值余额中计量扣费。这意味着从未在你那里注册过的团队也会带来付费用量。见下文「平台资格」一节。
 
-## Eligibility
+## 准入条件
 
-You need ALL of these. They exist because every listing is *live-tested*, not transcribed:
+以下条件必须全部满足。它们存在的原因是：每一条上架记录都经过*实测*，而不是照抄文档：
 
-| Requirement | Why |
+| 要求 | 原因 |
 |---|---|
-| **Self-serve API keys** — sign up, get a key, no sales call | The whole listing pipeline runs in one session; sales-gated APIs can't be verified |
-| **Key rides in a header or query param** | treg injects credentials as a header (preferred) or query param. Keys embedded in the URL path are not supported |
-| **A free (or near-free) probe endpoint** that returns 2xx for a valid key and a distinguishable failure for an invalid one | Connect-time verification. We will literally send your API a garbage key and watch it get rejected — **an API that accepts any key cannot be listed** |
-| **Published pricing** with a stable URL | Costs in the catalog carry provenance (`source_url`, `checked`, `confidence`); "contact sales" prices can't be listed as numbers |
-| **Accurate docs** for your core endpoints: param names, types, required flags, and example *values* | Every listed endpoint gets a real test call; docs without example values can't be verified |
+| **自助获取 API 密钥**——注册、拿到密钥，无需销售介入 | 整条上架流水线要在一次会话内跑完；需要销售放行的 API 无法验证 |
+| **密钥通过 header 或 query 参数传递** | treg 以 header（首选）或 query 参数的形式注入凭据。不支持把密钥嵌在 URL 路径中 |
+| **一个免费（或近乎免费）的探测端点**，对有效密钥返回 2xx，对无效密钥返回可区分的失败 | 用于连接时验证。我们会真的向你的 API 发送一个垃圾密钥，看着它被拒绝——**接受任何密钥的 API 无法上架** |
+| **公开的定价页**，且 URL 稳定 | 工具目录中的成本带有出处（`source_url`、`checked`、`confidence`）；「联系销售」式的定价无法以数字形式上架 |
+| **核心端点的文档准确**：参数名、类型、必填标志和示例*值* | 每个上架端点都会被真实调用测试；没有示例值的文档无法验证 |
 
-Strongly preferred (each one directly improves your listing):
+强烈建议具备（每一项都直接改善你的上架效果）：
 
-- **An OpenAPI spec at a stable URL** — lets us machine-generate your *full* endpoint surface as
-  an "extended tier" (hundreds of routes), not just the hand-curated core 8–15.
-- **A machine-readable rate card endpoint** (an API route that returns your current per-endpoint
-  prices) — the strongest cost provenance we have, and the fastest route to platform eligibility.
-- **Per-success billing** (errors free) — makes verification and retries cheap, and means broken
-  calls never bill treg users.
-- **Documented rate limits**, including per-route limits, not just the account-wide one.
+- **稳定 URL 上的 OpenAPI 规范**——让我们能够机器生成你*完整的*端点面，作为「扩展层」（数百条路由），而不仅是人工精选的 8–15 个核心端点。
+- **机器可读的费率卡端点**（返回你当前各端点价格的 API 路由）——这是我们掌握的最强成本出处，也是获得平台资格的最快途径。
+- **按成功计费**（出错免费）——让验证和重试变得便宜，也意味着失败的调用永远不会向 treg 用户收费。
+- **有文档记录的速率限制**，包括按路由的限制，而不只是账户级的总限制。
 
-## What to send us
+## 需要提交什么
 
-The fastest route: paste the prompt from the **"List as vendor"** button on the dashboard's
-Catalog page into your coding agent — it follows the hosted instructions at
-[`/vendor-listing`](https://treg.to/vendor-listing) and opens the PR for you.
-Or open an issue or PR on this repo yourself, with:
+最快的路径：把控制台 Catalog 页面上 **"List as vendor"** 按钮给出的提示词粘贴给你的 coding agent——它会按照 [`/vendor-listing`](https://treg.to/vendor-listing) 上的托管说明执行，并替你发起 PR。或者你也可以直接在这个仓库开 issue 或 PR，内容包含：
 
-0. **A contact email in the PR/issue description** (e.g. `Contact: partnerships@yourapi.com`) —
-   we use it to arrange a test credential for live verification; a PR without one cannot be
-   verified or merged
+0. **在 PR/issue 描述中附上联系邮箱**（例如 `Contact: partnerships@yourapi.com`）——我们用它来安排用于实测的测试凭据；缺少联系邮箱的 PR 无法验证，也无法合入
 
-1. `service` slug (lowercase), display name, and a one-line summary of what an agent can DO
-2. `base_url`, auth mechanics (header name + format, or query param name)
-3. Probe endpoint path + exact bad-key behavior (status code, or the JSON field that flips)
-4. Pricing page URL + billing model; rate-card endpoint if you have one
-5. Docs URL; OpenAPI spec URL if published
-6. Your 8–15 core endpoints, each with example parameter values and a cheap test target
-7. A test credential (or a small credits grant) sent privately once we reach out — **never in
-   the issue/PR** — so we can run live verification
-8. **A self-verification ledger**: before submitting, run every `test_request` live against your
-   own account and record, per endpoint, the HTTP status, the cost your YAML claims, and the cost
-   your meter actually charged (charge field, rate-card endpoint, or balance delta), dated. Docs
-   drift; meters don't — a real submission's docs-transcribed price was 5× under what the meter
-   charged. Deliberate-miss test targets must be labeled as such, with the hit price observed
-   once on a real target.
-9. **A full-surface map**: every documented operation, marked catalogued or excluded-with-reason —
-   including the free count/preview routes and your cheapest operation tiers, which are the ones
-   agents (and reviewers) look for first.
+1. `service` slug（小写）、显示名称，以及一句话概括 agent 能用它*做什么*
+2. `base_url`、认证机制（header 名称 + 格式，或 query 参数名）
+3. 探测端点路径 + 无效密钥的确切行为（状态码，或发生翻转的 JSON 字段）
+4. 定价页 URL + 计费模式；如有费率卡端点也一并附上
+5. 文档 URL；如已发布 OpenAPI 规范也请附上其 URL
+6. 你的 8–15 个核心端点，每个都附带示例参数值和一个低成本测试目标
+7. 一份测试凭据（或少量额度赠送），在我们联系后私下提供——**绝不要贴在 issue/PR 里**——以便我们进行实测验证
+8. **一份自查核验台账**：提交之前，用你自己的账号对每一条 `test_request` 做真实调用，并按端点记录 HTTP 状态、你的 YAML 所声称的成本，以及你的计量系统实际收取的成本（charge 字段、费率卡端点或余额变动），并注明日期。文档会漂移，计量系统不会——曾有一个真实提交，按文档誊写的价格比计量系统实际收取的低了 5 倍。故意打偏（deliberate-miss）的测试目标必须如实标注，并附上在真实目标上观测过一次的命中价格。
+9. **一张完整端点面地图**：每一个有文档记载的操作，标注为已收录或附原因排除——包括免费的计数/预览路由和你最便宜的操作档位，这些正是 agent（和审核者）最先寻找的东西。
 
-The example below is the complete shape of a listing.
+下面的示例展示了一条上架记录的完整形态。
 
-## Example implementation — "Acme SEO"
+## 实現示例——「Acme SEO」
 
-A fictional vendor: Acme SEO sells backlink data at `https://api.acmeseo.example/v1`, key in an
-`X-Api-Key` header, free `/account` route, $0.002 per successful request, pricing at
-`https://acmeseo.example/pricing`.
+一个虚构的服务商：Acme SEO 在 `https://api.acmeseo.example/v1` 出售反向链接数据，密钥放在 `X-Api-Key` header 中，`/account` 路由免费，每次成功请求 $0.002，定价见 `https://acmeseo.example/pricing`。
 
-### 1. Registry entry — `src/treg/oauth_providers.py`
+### 1. 注册中心条目——`src/treg/oauth_providers.py`
 
-How a team connects a key, and how treg verifies it is real:
+团队如何连接密钥，以及 treg 如何验证它是真实的：
 
 ```python
 ACMESEO = OAuthProvider(
@@ -105,16 +80,13 @@ ACMESEO = OAuthProvider(
 )
 ```
 
-…added to the `REGISTRY` tuple, plus a neutral lettermark at `src/treg/web/logos/acmeseo.svg`
-and the two test-list additions (`test_every_provider_is_registered`, `test_key_providers`).
+……把它加入 `REGISTRY` 元组，再在 `src/treg/web/logos/acmeseo.svg` 放一个中性字母标（lettermark），并在两个测试清单里补上条目（`test_every_provider_is_registered`、`test_key_providers`）。
 
-If your API answers HTTP 200 even for a bad key, the entry instead names the body field that
-distinguishes them (`token_verify_field`, `token_ok_field`/`token_ok_value`, or
-`token_reject_field`) — tell us the exact behavior and we pick the right one.
+如果你的 API 即使对无效密钥也返回 HTTP 200，条目则改为指定用于区分两者的响应体字段（`token_verify_field`、`token_ok_field`/`token_ok_value`，或 `token_reject_field`）——把确切行为告诉我们，我们来选对的那个。
 
-### 2. Core catalog file — `src/treg/catalog/acmeseo.yaml`
+### 2. 核心工具目录文件——`src/treg/catalog/acmeseo.yaml`
 
-What an agent can do, priced and verifiable:
+agent 能做什么，附带价格且可验证：
 
 ```yaml
 provider: acmeseo                  # must equal the registry entry's `service`
@@ -151,23 +123,13 @@ endpoints:
   # …7–14 more endpoints, same shape
 ```
 
-The `capability` field is what puts you on the comparison shelf: an agent asking for
-`web.backlinks.summary` sees every provider that implements it, with prices side by side. If
-your API does a job the taxonomy lacks, the file proposes it under `proposed_capabilities:`.
+`capability` 字段是把你放上比较货架的关键：请求 `web.backlinks.summary` 的 agent 会看到实现该能力的每一家服务商，价格并排呈现。如果你的 API 所做的工作在现有分类体系中没有对应条目，就在文件的 `proposed_capabilities:` 下提议一个。
 
-Capability first, for every endpoint: search `capabilities.yaml` and the other provider files for
-the job before writing the field, and reuse an existing id rather than a near-duplicate. Propose a
-new one only when nothing covers the job; if another provider already has an endpoint doing it
-unmapped, name that endpoint in the PR so both get attached. Overlap is the point: endpoints that
-share a capability are the ones agents compare and route between.
+每个端点都能力优先：写下这个字段之前，先在 `capabilities.yaml` 和其他服务商文件里搜索这项工作，复用已有的 id，而不是造一个近似重复。只有在没有任何条目覆盖这项工作时才提议新能力；如果另一家服务商已经有做这件事但尚未映射的端点，就在 PR 里点名那个端点，让两者挂到同一个能力之下。重叠正是意义所在：共享同一能力的端点，正是 agent 会放在一起比较并在其间路由的对象。
 
-### 3. What we run before it merges
+### 3. 合入之前我们会运行什么
 
-Your self-verification ledger speeds this up but never replaces it: every claim in a vendor PR —
-prices, probe behavior, evidence — is re-checked against an **independent** live run with a
-credential we control. `verified:` stamps and example responses are ours to add, on what we
-watched succeed. A ledger that disagrees with its own YAML bounces the PR; a price that disagrees
-with our meter gets corrected from the observed charge.
+你的自查核验台账能加快这一步，但永远替代不了它：服务商 PR 中的每一项声明——价格、探测行为、证据——都会用我们掌控的凭据，通过一次**独立的**真实调用重新核验。`verified:` 戳记和示例响应由我们添加，依据是我们亲眼观测到的成功调用。台账与它自己的 YAML 相互矛盾，PR 会被退回；价格与我们的计量不符，则以实际观测到的扣费为准修正。
 
 ```bash
 # 1. Live bogus-key test: a garbage key POSTed to /connections/token must come back rejected
@@ -179,42 +141,32 @@ uv run python scripts/catalog_validate.py     # must exit 0
 uv run --frozen python -m pytest -q
 ```
 
-Every endpoint row also carries `added:`, the UTC day it reached the catalog. Run
-`uv run python scripts/catalog_added.py` before opening the PR: it writes today's date on every
-row without one. An existing tool's date never changes.
+每个端点行还带有 `added:`，即它进入工具目录的 UTC 日期。发起 PR 之前请运行 `uv run python scripts/catalog_added.py`：它会为每一个缺失日期的行写入今天的日期。已有工具的日期永远不会改变。
 
-Endpoints that pass get a `verified:` date and a truncated, PII-scrubbed real example response
-committed to `src/treg/catalog/examples/` — that example is what convinces an agent choosing
-between providers, so passing verification is the listing's main asset.
+通过验证的端点会获得 `verified:` 日期，以及一条经过截断和 PII 清洗的真实示例响应，提交到 `src/treg/catalog/examples/`——这个示例正是在多家服务商之间做选择的 agent 最有说服力的依据，因此通过验证是上架记录最重要的资产。
 
-## Platform-eligible — getting paid calls from treg's own key
+## 平台资格——用 treg 自己的密钥获得付费调用
 
-Beyond discovery, treg can serve your endpoints on its **own** key, charging the calling team's
-prepaid balance per call. An endpoint qualifies when:
+除了可发现性之外，treg 还能用**自己的**密钥对外提供你的端点，按次从调用团队的预充值余额中扣费。一个端点符合资格的条件是：
 
-- its cost is machine-computable in USD (a concrete `value`, or a convertible credit/unit rate),
-- the price's `confidence` is `verified` (observed billed, or read from your live rate card) or
-  `documented` (transcribed from your published pricing), and
-- it isn't an own-account or account-management route.
+- 其成本可以按美元机器计算（有具体的 `value`，或可换算的 credit/单位费率），
+- 价格的 `confidence` 为 `verified`（观测到实际计费，或读取自你在线的费率卡）或 `documented`（从你公开的定价誊写），并且
+- 它不是自有账号类或账号管理类路由。
 
-Eligibility is necessary but not sufficient — treg also has to hold a funded account with you
-and allow-list your service, which is an ops decision made per provider. The fastest way to get
-there: publish a rate-card endpoint, bill per success, and give us a verification credit grant.
+符合资格是必要条件而非充分条件——treg 还要在你那里持有一个有余额的账号，并把你的服务加入白名单，这是按服务商逐个做出的运营决策。最快达成的方式：发布一个费率卡端点、按成功计费，并给我们一笔用于验证的额度赠送。
 
-## What gets declined
+## 哪些情况会被拒绝
 
-Recorded reasons from past reviews, so nobody wastes a cycle:
+过往审核中记录在案的拒绝原因，免得有人白费一轮功夫：
 
-- API accepts any key (no way to validate a connection)
-- Key embedded in the URL path
-- Sales-gated / enterprise-only access
-- Legal or shutdown risk; deprecated or absorbed products
-- UI-only products with no API
+- API 接受任何密钥（无法验证连接）
+- 密钥嵌在 URL 路径中
+- 需要销售放行 / 仅限企业客户的接入
+- 法律或关停风险；已废弃或被吸收合并的产品
+- 只有 UI、没有 API 的产品
 
-## Keeping your listing healthy
+## 保持上架记录的健康
 
-- **Prices moved?** Tell us or PR the `cost` blocks — stale prices are flagged after 90 days.
-- **Routes changed?** If you publish OpenAPI, a re-ingest regenerates your extended tier from
-  the spec; the curated core file is updated by hand, so breaking changes there need a heads-up.
-- **Success rates are public.** treg aggregates observed success rate and latency per endpoint
-  across all callers and shows them next to your price. Reliability is your ranking.
+- **价格变了？**告诉我们，或者直接对 `cost` 块提 PR——价格超过 90 天未更新会被标记。
+- **路由变了？**如果你发布了 OpenAPI，重新摄取会按规范重新生成你的扩展层；人工精选的核心文件靠手工更新，因此那里的破坏性变更需要提前告知。
+- **成功率是公开的。**treg 汇总所有调用者在每个端点上观测到的成功率和延迟，并展示在你的价格旁边。可靠性就是你的排名。
